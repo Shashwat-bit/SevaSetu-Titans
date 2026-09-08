@@ -6,6 +6,7 @@ import { UserRole } from '../models/User';
 
 export interface AuthTokenPayload {
   userId: string;
+  id?: string;
   citizenId: string;
   name: string;
   email: string;
@@ -28,6 +29,9 @@ export function authenticate(req: AuthRequest, _res: Response, next: NextFunctio
 
   try {
     const decoded = jwt.verify(token, ENV.JWT_SECRET) as AuthTokenPayload;
+    if (!decoded.id && decoded.userId) {
+      decoded.id = decoded.userId;
+    }
     req.user = decoded;
     next();
   } catch (err: any) {

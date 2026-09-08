@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   Shield,
   Play,
+  AlertCircle,
 } from 'lucide-react';
 
 interface MyApplicationsPageProps {
@@ -345,27 +346,83 @@ export const MyApplicationsPage: React.FC<MyApplicationsPageProps> = ({
                   Documents Attached via Mock Adapter ({trackingApp.documentsAttached.length})
                 </h4>
                 <div className="space-y-2 text-xs">
-                  {trackingApp.documentsAttached.map((doc, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                        <div>
-                          <span className="font-semibold text-slate-800">{doc.name}</span>
-                          <p className="text-[10px] text-slate-500">
-                            Source: {doc.source} {doc.docNumber ? `• Ref: ${doc.docNumber}` : ''}
-                          </p>
+                  {trackingApp.documentsAttached.map((doc, idx) => {
+                    const isVerified = doc.verificationStatus === 'VERIFIED' || doc.verified;
+                    const isRejected = doc.verificationStatus === 'REJECTED';
+
+                    return (
+                      <div
+                        key={idx}
+                        className={`p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
+                          isRejected
+                            ? 'bg-rose-50/50 border-rose-200'
+                            : isVerified
+                            ? 'bg-white border-slate-200'
+                            : 'bg-amber-50/30 border-amber-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {isRejected ? (
+                            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                          ) : (
+                            <CheckCircle2
+                              className={`w-4 h-4 shrink-0 ${
+                                isVerified ? 'text-emerald-600' : 'text-amber-500'
+                              }`}
+                            />
+                          )}
+                          <div>
+                            <span className="font-semibold text-slate-800">{doc.name}</span>
+                            <p className="text-[10px] text-slate-500">
+                              Source: {doc.source} {doc.docNumber ? `• Ref: ${doc.docNumber}` : ''}
+                            </p>
+                            {isRejected && doc.rejectionReason && (
+                              <p className="text-[11px] font-medium text-rose-700 mt-0.5">
+                                Officer Note: &quot;{doc.rejectionReason}&quot;
+                              </p>
+                            )}
+                          </div>
                         </div>
+                        <span
+                          className={`self-start sm:self-center text-[10px] font-bold px-2 py-0.5 rounded ${
+                            isRejected
+                              ? 'text-rose-700 bg-rose-100 border border-rose-300'
+                              : isVerified
+                              ? 'text-emerald-700 bg-emerald-50 border border-emerald-200'
+                              : 'text-amber-700 bg-amber-50 border border-amber-200'
+                          }`}
+                        >
+                          {isRejected ? 'Flagged / Rejected' : isVerified ? 'Verified' : 'Pending Verification'}
+                        </span>
                       </div>
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
-                        Verified
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
+
+              {/* Officer Remarks (Visible to Citizen) */}
+              {trackingApp.officerRemarks && trackingApp.officerRemarks.length > 0 && (
+                <div className="border-t border-slate-200 pt-5 space-y-2.5">
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5 text-brand-600" />
+                    <span>Official Department Desk Remarks</span>
+                  </h4>
+                  <div className="space-y-2 text-xs">
+                    {trackingApp.officerRemarks.map((rem) => (
+                      <div
+                        key={rem.id}
+                        className="p-3 bg-blue-50/50 border border-blue-200 rounded-xl space-y-1"
+                      >
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-bold text-navy-900">{rem.officerName}</span>
+                          <span className="text-slate-400">{rem.timestamp}</span>
+                        </div>
+                        <p className="text-slate-700 leading-relaxed font-sans">{rem.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Modal Footer */}

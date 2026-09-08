@@ -235,6 +235,10 @@ export class ApplicationService {
         minute: '2-digit',
       });
 
+      const officerUserId = officer.id || officer.userId;
+      app.assignedOfficerId = officerUserId;
+      app.assignedOfficerName = officer.name;
+
       // Update timeline events
       if (nextStatus === 'Under Verification' && app.timeline.length >= 4) {
         app.timeline[2].status = 'completed';
@@ -264,6 +268,11 @@ export class ApplicationService {
         type: 'status_change',
         statusBadge: nextStatus,
         timestamp: nowFormatted,
+        metadata: {
+          officerId: officerUserId,
+          officerName: officer.name,
+          departmentId: officer.departmentId,
+        },
       });
     }
 

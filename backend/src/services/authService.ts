@@ -41,8 +41,10 @@ export class AuthService {
   }
 
   public generateToken(user: IUser): string {
+    const userIdStr = user._id.toString();
     const payload: AuthTokenPayload = {
-      userId: user._id.toString(),
+      userId: userIdStr,
+      id: userIdStr,
       citizenId: user.citizenId,
       name: user.name,
       email: user.email,

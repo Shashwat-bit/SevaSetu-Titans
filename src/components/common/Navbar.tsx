@@ -15,6 +15,7 @@ interface NavbarProps {
   onSelectTab: (tab: NavTab) => void;
   activeAppsCount: number;
   activeConsentCount: number;
+  userRole?: string;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -22,26 +23,41 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectTab,
   activeAppsCount,
   activeConsentCount,
+  userRole = 'citizen',
 }) => {
-  const navItems = [
-    { id: 'dashboard' as NavTab, label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'services' as NavTab, label: 'Services', icon: Compass },
-    {
-      id: 'applications' as NavTab,
-      label: 'My Applications',
-      icon: FileText,
-      badge: activeAppsCount > 0 ? activeAppsCount : undefined,
-    },
-    { id: 'activity' as NavTab, label: 'Activity', icon: Activity },
-    {
-      id: 'consent' as NavTab,
-      label: 'Data & Consent',
-      icon: ShieldCheck,
-      badge: activeConsentCount > 0 ? activeConsentCount : undefined,
-      badgeColor: 'bg-emerald-500',
-    },
-    { id: 'profile' as NavTab, label: 'Profile', icon: User },
-  ];
+  const isOfficer = userRole === 'officer';
+
+  const navItems = isOfficer
+    ? [
+        { id: 'dashboard' as NavTab, label: 'Officer Dashboard', icon: LayoutDashboard },
+        {
+          id: 'applications' as NavTab,
+          label: 'Applications Queue',
+          icon: FileText,
+          badge: activeAppsCount > 0 ? activeAppsCount : undefined,
+        },
+        { id: 'activity' as NavTab, label: 'Department Audit', icon: Activity },
+        { id: 'profile' as NavTab, label: 'Officer Profile', icon: User },
+      ]
+    : [
+        { id: 'dashboard' as NavTab, label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'services' as NavTab, label: 'Services', icon: Compass },
+        {
+          id: 'applications' as NavTab,
+          label: 'My Applications',
+          icon: FileText,
+          badge: activeAppsCount > 0 ? activeAppsCount : undefined,
+        },
+        { id: 'activity' as NavTab, label: 'Activity', icon: Activity },
+        {
+          id: 'consent' as NavTab,
+          label: 'Data & Consent',
+          icon: ShieldCheck,
+          badge: activeConsentCount > 0 ? activeConsentCount : undefined,
+          badgeColor: 'bg-emerald-500',
+        },
+        { id: 'profile' as NavTab, label: 'Profile', icon: User },
+      ];
 
   return (
     <>

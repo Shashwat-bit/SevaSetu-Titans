@@ -26,6 +26,9 @@ import { ProfilePage } from './pages/ProfilePage';
 import { OnboardingModal } from './pages/OnboardingModal';
 import { ApplicationFlowModal } from './pages/ApplicationFlowModal';
 import { AuthModal } from './components/common/AuthModal';
+import { OfficerDashboardPage } from './pages/officer/OfficerDashboardPage';
+import { OfficerApplicationsPage } from './pages/officer/OfficerApplicationsPage';
+import { OfficerApplicationDetailPage } from './pages/officer/OfficerApplicationDetailPage';
 
 export const App: React.FC = () => {
   // Store States
@@ -38,12 +41,23 @@ export const App: React.FC = () => {
   // Navigation State
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
 
+  // Officer Workbench State
+  const [officerSelectedAppId, setOfficerSelectedAppId] = useState<string | null>(null);
+  const [officerStatusFilter, setOfficerStatusFilter] = useState<string | undefined>(undefined);
+
   // Modal States
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [selectedServiceForApply, setSelectedServiceForApply] = useState<ServiceItem | null>(null);
   const [selectedAppIdForTracking, setSelectedAppIdForTracking] = useState<string | null>(null);
+
+  // Reset navigation when switching personas/roles
+  useEffect(() => {
+    setOfficerSelectedAppId(null);
+    setSelectedAppIdForTracking(null);
+    setActiveTab('dashboard');
+  }, [citizen.id, citizen.role]);
 
   // Subscribe to adapter store changes and 401 unauthorized events
   useEffect(() => {
@@ -83,6 +97,7 @@ export const App: React.FC = () => {
   const handleResetDemo = () => {
     adapterStore.resetDemoData();
     setSelectedAppIdForTracking(null);
+    setOfficerSelectedAppId(null);
     setSelectedServiceForApply(null);
   };
 
@@ -90,6 +105,8 @@ export const App: React.FC = () => {
   const activeAppsCount = applications.filter(
     (a) => a.status === 'Submitted' || a.status === 'Under Verification' || a.status === 'Under Review'
   ).length;
+
+  const isOfficer = citizen.role === 'officer';
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans">
@@ -101,79 +118,148 @@ export const App: React.FC = () => {
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
       />
 
-      {/* Main 6-tab Navigation */}
+      {/* Main Navigation with Role Awareness */}
       <Navbar
         activeTab={activeTab}
         onSelectTab={(tab) => {
           setActiveTab(tab);
+          setOfficerSelectedAppId(null);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
         activeAppsCount={activeAppsCount}
         activeConsentCount={activeConsentCount}
+        userRole={citizen.role}
       />
 
       {/* Main Page Content Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {activeTab === 'dashboard' && (
-          <DashboardPage
-            citizen={citizen}
-            applications={applications}
-            permissions={permissions}
-            activities={activities}
-            services={MOCK_SERVICES}
-            onSelectService={handleSelectService}
-            onNavigateTab={(tab) => {
-              setActiveTab(tab);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            onSelectApplication={(app) => {
-              setSelectedAppIdForTracking(app.id);
-              setActiveTab('applications');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            onOpenHowItWorks={() => setIsHowItWorksOpen(true)}
-          />
-        )}
+        {isOfficer ? (
+          /* =================================================== */
+          /* OFFICER WORKSPACE PORTAL                            */
+          /* =================================================== */
+          officerSelectedAppId ? (
+            <OfficerApplicationDetailPage
+              applicationId={officerSelectedAppId}
+              officer={citizen}
+              onBack={() => setOfficerSelectedAppId(null)}
+              onApplicationUpdated={() => {
+                adapterStore.syncFromBackend();
+              }}
+            />
+          ) : (
+            <>
+              {activeTab === 'dashboard' && (
+                <OfficerDashboardPage
+                  officer={citizen}
+                  onNavigateToApplications={(filter) => {
+                    setOfficerStatusFilter(filter);
+                    setActiveTab('applications');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  onSelectApplication={(appId) => {
+                    setOfficerSelectedAppId(appId);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                />
+              )}
 
-        {activeTab === 'services' && (
-          <ServicesPage
-            services={MOCK_SERVICES}
-            onSelectService={handleSelectService}
-          />
-        )}
+              {activeTab === 'applications' && (
+                <OfficerApplicationsPage
+                  officer={citizen}
+                  initialStatusFilter={officerStatusFilter}
+                  onSelectApplication={(appId) => {
+                    setOfficerSelectedAppId(appId);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                />
+              )}
 
-        {activeTab === 'applications' && (
-          <MyApplicationsPage
-            applications={applications}
-            selectedAppId={selectedAppIdForTracking}
-            onClearSelectedApp={() => setSelectedAppIdForTracking(null)}
-            citizen={citizen}
-          />
-        )}
+              {activeTab === 'activity' && (
+                <ActivityPage activities={activities} />
+              )}
 
-        {activeTab === 'activity' && (
-          <ActivityPage activities={activities} />
-        )}
+              {activeTab === 'profile' && (
+                <ProfilePage
+                  citizen={citizen}
+                  digiLockerDocs={digiLockerDocs}
+                  onOpenOnboarding={() => setIsOnboardingOpen(true)}
+                  onResetDemo={handleResetDemo}
+                  onOpenAuthModal={() => setIsAuthModalOpen(true)}
+                  onLogout={() => {
+                    adapterStore.logout();
+                    setIsAuthModalOpen(true);
+                  }}
+                />
+              )}
+            </>
+          )
+        ) : (
+          /* =================================================== */
+          /* CITIZEN DASHBOARD & EXPERIENCE                      */
+          /* =================================================== */
+          <>
+            {activeTab === 'dashboard' && (
+              <DashboardPage
+                citizen={citizen}
+                applications={applications}
+                permissions={permissions}
+                activities={activities}
+                services={MOCK_SERVICES}
+                onSelectService={handleSelectService}
+                onNavigateTab={(tab) => {
+                  setActiveTab(tab);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                onSelectApplication={(app) => {
+                  setSelectedAppIdForTracking(app.id);
+                  setActiveTab('applications');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                onOpenHowItWorks={() => setIsHowItWorksOpen(true)}
+              />
+            )}
 
-        {activeTab === 'consent' && (
-          <DataConsentPage
-            permissions={permissions}
-            activities={activities}
-          />
-        )}
+            {activeTab === 'services' && (
+              <ServicesPage
+                services={MOCK_SERVICES}
+                onSelectService={handleSelectService}
+              />
+            )}
 
-        {activeTab === 'profile' && (
-          <ProfilePage
-            citizen={citizen}
-            digiLockerDocs={digiLockerDocs}
-            onOpenOnboarding={() => setIsOnboardingOpen(true)}
-            onResetDemo={handleResetDemo}
-            onOpenAuthModal={() => setIsAuthModalOpen(true)}
-            onLogout={() => {
-              adapterStore.logout();
-              setIsAuthModalOpen(true);
-            }}
-          />
+            {activeTab === 'applications' && (
+              <MyApplicationsPage
+                applications={applications}
+                selectedAppId={selectedAppIdForTracking}
+                onClearSelectedApp={() => setSelectedAppIdForTracking(null)}
+                citizen={citizen}
+              />
+            )}
+
+            {activeTab === 'activity' && (
+              <ActivityPage activities={activities} />
+            )}
+
+            {activeTab === 'consent' && (
+              <DataConsentPage
+                permissions={permissions}
+                activities={activities}
+              />
+            )}
+
+            {activeTab === 'profile' && (
+              <ProfilePage
+                citizen={citizen}
+                digiLockerDocs={digiLockerDocs}
+                onOpenOnboarding={() => setIsOnboardingOpen(true)}
+                onResetDemo={handleResetDemo}
+                onOpenAuthModal={() => setIsAuthModalOpen(true)}
+                onLogout={() => {
+                  adapterStore.logout();
+                  setIsAuthModalOpen(true);
+                }}
+              />
+            )}
+          </>
         )}
       </main>
 

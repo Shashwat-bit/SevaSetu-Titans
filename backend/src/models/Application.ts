@@ -9,11 +9,29 @@ export interface ITimelineEvent {
 }
 
 export interface IAttachedDocument {
+  docId?: string;
   name: string;
   docType: string;
   source: string;
   verified: boolean;
   docNumber?: string;
+  verificationStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  verifiedBy?: string; // Authenticated officer User ID (req.user.id / _id), NOT citizenId
+  verifiedByName?: string;
+  verifiedDepartment?: string;
+  verifiedAt?: string;
+  rejectionReason?: string;
+}
+
+export interface IOfficerRemark {
+  id: string;
+  applicationId: string;
+  officerId: string; // Authenticated officer User ID (req.user.id / _id), NOT citizenId
+  officerName: string;
+  departmentId: string;
+  role: string;
+  text: string;
+  timestamp: string;
 }
 
 export interface IPrefilledField {
@@ -30,12 +48,15 @@ export interface IApplication extends Document {
   serviceName: string;
   departmentId: string;
   departmentName: string;
-  status: string; // 'Submitted' | 'Under Verification' | 'Under Review' | 'Approved' | 'Rejected'
+  status: string; // 'Draft' | 'Submitted' | 'Documents Received' | 'Under Verification' | 'Under Review' | 'Approved' | 'Rejected' | 'Completed'
   submittedAt: string;
   prefilledFields: Record<string, IPrefilledField>;
   userFields: Record<string, string>;
   documentsAttached: IAttachedDocument[];
   timeline: ITimelineEvent[];
+  officerRemarks: IOfficerRemark[];
+  assignedOfficerId?: string;
+  assignedOfficerName?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -53,11 +74,36 @@ const TimelineEventSchema = new Schema<ITimelineEvent>(
 
 const AttachedDocumentSchema = new Schema<IAttachedDocument>(
   {
+    docId: { type: String },
     name: { type: String, required: true },
     docType: { type: String, required: true },
     source: { type: String, required: true },
     verified: { type: Boolean, default: true },
     docNumber: { type: String },
+    verificationStatus: {
+      type: String,
+      enum: ['PENDING', 'VERIFIED', 'REJECTED'],
+      default: 'PENDING',
+    },
+    verifiedBy: { type: String },
+    verifiedByName: { type: String },
+    verifiedDepartment: { type: String },
+    verifiedAt: { type: String },
+    rejectionReason: { type: String },
+  },
+  { _id: false }
+);
+
+const OfficerRemarkSchema = new Schema<IOfficerRemark>(
+  {
+    id: { type: String, required: true },
+    applicationId: { type: String, required: true },
+    officerId: { type: String, required: true },
+    officerName: { type: String, required: true },
+    departmentId: { type: String, required: true },
+    role: { type: String, required: true },
+    text: { type: String, required: true },
+    timestamp: { type: String, required: true },
   },
   { _id: false }
 );
@@ -81,6 +127,9 @@ const ApplicationSchema = new Schema<IApplication>(
     userFields: { type: Schema.Types.Mixed, default: {} },
     documentsAttached: [AttachedDocumentSchema],
     timeline: [TimelineEventSchema],
+    officerRemarks: { type: [OfficerRemarkSchema], default: [] },
+    assignedOfficerId: { type: String },
+    assignedOfficerName: { type: String },
   },
   { timestamps: true }
 );

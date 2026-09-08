@@ -1,9 +1,11 @@
 export type ApplicationStatus =
+  | 'Draft'
   | 'Submitted'
   | 'Under Verification'
   | 'Under Review'
   | 'Approved'
-  | 'Rejected';
+  | 'Rejected'
+  | 'Completed';
 
 export type UserRole = 'citizen' | 'officer' | 'admin';
 
@@ -57,11 +59,29 @@ export interface TimelineEvent {
 }
 
 export interface ApplicationDocument {
+  docId?: string;
   name: string;
   docType: string;
   source: string;
   verified: boolean;
   docNumber?: string;
+  verificationStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  verifiedBy?: string; // Authenticated officer User ID (req.user.id / _id), NOT citizenId
+  verifiedByName?: string;
+  verifiedDepartment?: string;
+  verifiedAt?: string;
+  rejectionReason?: string;
+}
+
+export interface OfficerRemark {
+  id: string;
+  applicationId: string;
+  officerId: string; // Authenticated officer User ID (req.user.id / _id), NOT citizenId
+  officerName: string;
+  departmentId: string;
+  role: string;
+  text: string;
+  timestamp: string;
 }
 
 export interface Application {
@@ -79,6 +99,27 @@ export interface Application {
   userFields: Record<string, string>;
   timeline: TimelineEvent[];
   documentsAttached: ApplicationDocument[];
+  officerRemarks?: OfficerRemark[];
+  assignedOfficerId?: string;
+  assignedOfficerName?: string;
+}
+
+export interface OfficerDashboardStats {
+  officer: {
+    name: string;
+    email: string;
+    role: string;
+    departmentId: string;
+    departmentName: string;
+  };
+  stats: {
+    total: number;
+    pendingVerification: number;
+    underReview: number;
+    approved: number;
+    rejected: number;
+  };
+  recentApplications: Application[];
 }
 
 export interface ConsentPermission {
@@ -102,7 +143,14 @@ export interface AuditActivity {
   departmentName: string;
   action: string;
   details: string;
-  type: 'submission' | 'document_access' | 'verification' | 'consent_grant' | 'consent_revoke' | 'status_change';
+  type:
+    | 'submission'
+    | 'document_access'
+    | 'verification'
+    | 'consent_grant'
+    | 'consent_revoke'
+    | 'status_change'
+    | 'officer_remark';
   statusBadge: string;
 }
 

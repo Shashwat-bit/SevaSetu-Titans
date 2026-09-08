@@ -300,8 +300,28 @@ export const SEED_APPLICATIONS = [
       'Family Annual Income': '₹3,20,000 / year',
     },
     documentsAttached: [
-      { name: 'Class XII Senior School Marksheet', docType: 'Marksheet', source: 'DigiLocker Mock (CBSE)', verified: true, docNumber: 'CBSE/2023/849201' },
-      { name: 'Aadhaar Identity Card', docType: 'Identity Document', source: 'DigiLocker Mock (UIDAI)', verified: true, docNumber: 'UIDAI-XXXX-4921' },
+      {
+        docId: 'doc-edu-001',
+        name: 'Class XII Senior School Marksheet',
+        docType: 'Marksheet',
+        source: 'DigiLocker Mock (CBSE)',
+        verified: true,
+        docNumber: 'CBSE/2023/849201',
+        verificationStatus: 'PENDING',
+      },
+      {
+        docId: 'doc-edu-002',
+        name: 'Aadhaar Identity Card',
+        docType: 'Identity Document',
+        source: 'DigiLocker Mock (UIDAI)',
+        verified: true,
+        docNumber: 'UIDAI-XXXX-4921',
+        verificationStatus: 'VERIFIED',
+        verifiedBy: 'officer-edu-001',
+        verifiedByName: 'Dr. Arvind Sharma',
+        verifiedDepartment: 'dept-edu',
+        verifiedAt: '08 Sep 2026, 11:15 AM',
+      },
     ],
     timeline: [
       {
@@ -347,6 +367,18 @@ export const SEED_APPLICATIONS = [
         status: 'pending' as const,
       },
     ],
+    officerRemarks: [
+      {
+        id: 'rem-seed-1',
+        applicationId: 'SS-2026-001024',
+        officerId: 'officer-edu-001',
+        officerName: 'Dr. Arvind Sharma',
+        departmentId: 'dept-edu',
+        role: 'officer',
+        text: 'Aadhaar e-KYC and family domicile verified against UIDAI mock ledger. Awaiting academic marksheet manual sign-off.',
+        timestamp: '08 Sep 2026, 11:20 AM',
+      },
+    ],
   },
   {
     applicationId: 'SS-2026-000842',
@@ -368,14 +400,26 @@ export const SEED_APPLICATIONS = [
       'Taluka/Tehsil': 'Gandhinagar Urban',
     },
     documentsAttached: [
-      { name: 'Aadhaar Identity Card', docType: 'Identity Document', source: 'DigiLocker Mock (UIDAI)', verified: true },
-      { name: 'Income Self-Declaration', docType: 'Salary / Income Proof', source: 'DigiLocker Mock', verified: true },
+      { docId: 'doc-rev-001', name: 'Aadhaar Identity Card', docType: 'Identity Document', source: 'DigiLocker Mock (UIDAI)', verified: true, verificationStatus: 'VERIFIED' },
+      { docId: 'doc-rev-002', name: 'Income Self-Declaration', docType: 'Salary / Income Proof', source: 'DigiLocker Mock', verified: true, verificationStatus: 'VERIFIED' },
     ],
     timeline: [
       { id: 't-1', title: 'Application Submitted', timestamp: '24 Aug 2026, 02:15 PM', description: 'Application received by Revenue Taluka adapter.', status: 'completed' as const },
       { id: 't-2', title: 'Documents Verified', timestamp: '25 Aug 2026, 11:00 AM', description: 'Field verification cleared by Talati officer.', status: 'completed' as const },
       { id: 't-3', title: 'Department Review', timestamp: '27 Aug 2026, 03:20 PM', description: 'Approved by Mamlatdar / Executive Magistrate.', status: 'completed' as const },
       { id: 't-4', title: 'Approved & Completed', timestamp: '28 Aug 2026, 04:30 PM', description: 'Digital certificate issued with QR verification code.', status: 'completed' as const },
+    ],
+    officerRemarks: [
+      {
+        id: 'rem-seed-2',
+        applicationId: 'SS-2026-000842',
+        officerId: 'officer-rev-001',
+        officerName: 'Smt. Rekha Patel',
+        departmentId: 'dept-rev',
+        role: 'officer',
+        text: 'Income certificate scrutiny completed. Income verified below statutory threshold.',
+        timestamp: '27 Aug 2026, 03:15 PM',
+      },
     ],
   },
   {
@@ -397,8 +441,8 @@ export const SEED_APPLICATIONS = [
       'Native District': 'Gandhinagar',
     },
     documentsAttached: [
-      { name: 'Aadhaar Identity Card', docType: 'Identity Document', source: 'DigiLocker Mock (UIDAI)', verified: true },
-      { name: 'Electricity Utility Consumer Bill', docType: 'Address Information', source: 'DigiLocker Mock', verified: true },
+      { docId: 'doc-rev-003', name: 'Aadhaar Identity Card', docType: 'Identity Document', source: 'DigiLocker Mock (UIDAI)', verified: true, verificationStatus: 'VERIFIED' },
+      { docId: 'doc-rev-004', name: 'Electricity Utility Consumer Bill', docType: 'Address Information', source: 'DigiLocker Mock', verified: false, verificationStatus: 'PENDING' },
     ],
     timeline: [
       { id: 't-1', title: 'Application Submitted', timestamp: '06 Sep 2026, 09:30 AM', description: 'Dispatched to Revenue Department Adapter.', status: 'completed' as const },
@@ -406,6 +450,7 @@ export const SEED_APPLICATIONS = [
       { id: 't-3', title: 'Tehsildar Review', timestamp: 'Pending', description: 'Local municipal inspection check.', status: 'pending' as const },
       { id: 't-4', title: 'Certificate Issuance', timestamp: 'Pending', description: 'Final sign-off by designated authority.', status: 'pending' as const },
     ],
+    officerRemarks: [],
   },
 ];
 
@@ -540,7 +585,9 @@ export async function seedDatabase(): Promise<{ success: boolean; message: strin
     await Activity.deleteMany({});
 
     // Seed Demo Users (Citizen, Officers, Admin)
-    await User.insertMany(SEED_USERS);
+    const createdUsers = await User.insertMany(SEED_USERS);
+    const eduOfficer = createdUsers.find((u) => u.email === 'officer.edu@gov.in');
+    const revOfficer = createdUsers.find((u) => u.email === 'officer.rev@gov.in');
 
     // Seed Departments
     await Department.insertMany(SEED_DEPARTMENTS);
@@ -551,8 +598,26 @@ export async function seedDatabase(): Promise<{ success: boolean; message: strin
     // Seed Documents
     await CitizenDocument.insertMany(SEED_DOCUMENTS);
 
-    // Seed Applications
-    await Application.insertMany(SEED_APPLICATIONS);
+    // Seed Applications with authentic officer User IDs
+    const applicationsToSeed = SEED_APPLICATIONS.map((app) => {
+      const clone = JSON.parse(JSON.stringify(app));
+      if (clone.applicationId === 'SS-2026-001024' && eduOfficer) {
+        if (clone.documentsAttached[1]) {
+          clone.documentsAttached[1].verifiedBy = eduOfficer._id.toString();
+        }
+        if (clone.officerRemarks && clone.officerRemarks[0]) {
+          clone.officerRemarks[0].officerId = eduOfficer._id.toString();
+        }
+      }
+      if (clone.applicationId === 'SS-2026-000842' && revOfficer) {
+        if (clone.officerRemarks && clone.officerRemarks[0]) {
+          clone.officerRemarks[0].officerId = revOfficer._id.toString();
+        }
+      }
+      return clone;
+    });
+
+    await Application.insertMany(applicationsToSeed);
 
     // Seed Consents
     await Consent.insertMany(SEED_CONSENTS);

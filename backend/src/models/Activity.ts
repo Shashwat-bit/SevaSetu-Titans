@@ -8,7 +8,14 @@ export interface IActivity extends Document {
   departmentName: string;
   action: string;
   details: string;
-  type: 'submission' | 'document_access' | 'verification' | 'consent_grant' | 'consent_revoke' | 'status_change';
+  type:
+    | 'submission'
+    | 'document_access'
+    | 'verification'
+    | 'consent_grant'
+    | 'consent_revoke'
+    | 'status_change'
+    | 'officer_remark';
   statusBadge: string;
   timestamp: string;
   metadata?: Record<string, any>;
@@ -27,7 +34,15 @@ const ActivitySchema = new Schema<IActivity>(
     details: { type: String, required: true },
     type: {
       type: String,
-      enum: ['submission', 'document_access', 'verification', 'consent_grant', 'consent_revoke', 'status_change'],
+      enum: [
+        'submission',
+        'document_access',
+        'verification',
+        'consent_grant',
+        'consent_revoke',
+        'status_change',
+        'officer_remark',
+      ],
       required: true,
       index: true,
     },

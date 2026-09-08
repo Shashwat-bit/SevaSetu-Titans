@@ -9,10 +9,12 @@ import consentRoutes from './consentRoutes';
 import activityRoutes from './activityRoutes';
 import seedRoutes from './seedRoutes';
 import authRoutes from './authRoutes';
+import officerRoutes from './officerRoutes';
 
 const apiRouter = Router();
 
 apiRouter.use('/auth', authRoutes);
+apiRouter.use('/officer', officerRoutes);
 apiRouter.use('/health', healthRoutes);
 apiRouter.use('/users', userRoutes);
 apiRouter.use('/departments', departmentRoutes);
