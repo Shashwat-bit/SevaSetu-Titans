@@ -1,0 +1,72 @@
+import { User, IUser } from '../models/User';
+import { AppError } from '../middleware/errorHandler';
+import { Activity } from '../models/Activity';
+
+export class UserService {
+  async getCurrentUser(): Promise<IUser> {
+    const user = await User.findOne({ citizenId: 'cit-001' });
+    if (!user) {
+      throw new AppError('Demo user not found. Please run seed.', 404);
+    }
+    return user;
+  }
+
+  async connectDigiLocker(): Promise<IUser> {
+    const user = await this.getCurrentUser();
+    user.isDigiLockerConnected = true;
+    user.connectedAt = new Date().toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    await user.save();
+
+    // Log Activity
+    await Activity.create({
+      activityId: `act-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      citizenId: user.citizenId,
+      serviceName: 'DigiLocker Interoperability Adapter',
+      departmentName: 'DigiLocker (Mock Node)',
+      action: 'DigiLocker account linked successfully',
+      details: 'Mock adapter connected with Aadhaar, Marksheet, and Address verified credentials',
+      type: 'consent_grant',
+      statusBadge: 'Connected',
+      timestamp: user.connectedAt,
+    });
+
+    return user;
+  }
+
+  async disconnectDigiLocker(): Promise<IUser> {
+    const user = await this.getCurrentUser();
+    user.isDigiLockerConnected = false;
+    await user.save();
+
+    const nowFormatted = new Date().toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    // Log Activity
+    await Activity.create({
+      activityId: `act-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      citizenId: user.citizenId,
+      serviceName: 'DigiLocker Interoperability Adapter',
+      departmentName: 'DigiLocker (Mock Node)',
+      action: 'DigiLocker account disconnected',
+      details: 'Digital credentials link removed from SevaSetu session',
+      type: 'consent_revoke',
+      statusBadge: 'Disconnected',
+      timestamp: nowFormatted,
+    });
+
+    return user;
+  }
+}
+
+export const userService = new UserService();

@@ -16,6 +16,13 @@ import {
   MOCK_DIGILOCKER_DOCS,
   MOCK_SERVICES,
 } from '../data/mockData';
+import {
+  usersApi,
+  applicationsApi,
+  consentsApi,
+  activitiesApi,
+  documentsApi,
+} from './api';
 
 const STORAGE_KEYS = {
   CITIZEN: 'sevasetu_citizen_v2',
@@ -39,6 +46,59 @@ class AdapterStore {
     this.permissions = this.load(STORAGE_KEYS.PERMISSIONS, INITIAL_PERMISSIONS);
     this.activities = this.load(STORAGE_KEYS.ACTIVITIES, INITIAL_ACTIVITIES);
     this.digiLockerDocs = this.load(STORAGE_KEYS.DIGILOCKER_DOCS, MOCK_DIGILOCKER_DOCS);
+
+    // Asynchronously synchronize with real backend API if running
+    this.syncFromBackend();
+  }
+
+  public async syncFromBackend(): Promise<void> {
+    try {
+      const [user, apps, perms, acts, docs] = await Promise.all([
+        usersApi.getMe().catch(() => null),
+        applicationsApi.getAll().catch(() => null),
+        consentsApi.getAll().catch(() => null),
+        activitiesApi.getAll().catch(() => null),
+        documentsApi.getAll().catch(() => null),
+      ]);
+
+      let changed = false;
+
+      if (user) {
+        this.citizen = user;
+        this.persist(STORAGE_KEYS.CITIZEN, this.citizen);
+        changed = true;
+      }
+
+      if (apps && apps.length > 0) {
+        this.applications = apps;
+        this.persist(STORAGE_KEYS.APPLICATIONS, this.applications);
+        changed = true;
+      }
+
+      if (perms && perms.length > 0) {
+        this.permissions = perms;
+        this.persist(STORAGE_KEYS.PERMISSIONS, this.permissions);
+        changed = true;
+      }
+
+      if (acts && acts.length > 0) {
+        this.activities = acts;
+        this.persist(STORAGE_KEYS.ACTIVITIES, this.activities);
+        changed = true;
+      }
+
+      if (docs && docs.length > 0) {
+        this.digiLockerDocs = docs;
+        this.persist(STORAGE_KEYS.DIGILOCKER_DOCS, this.digiLockerDocs);
+        changed = true;
+      }
+
+      if (changed) {
+        this.notify();
+      }
+    } catch {
+      // Backend not running or offline, gracefully continue with localStorage cache
+    }
   }
 
   private load<T>(key: string, defaultValue: T): T {
@@ -94,6 +154,9 @@ class AdapterStore {
     });
 
     this.notify();
+
+    // Sync to backend
+    usersApi.connectDigiLocker().catch(() => {});
   }
 
   public disconnectDigiLocker(): void {
@@ -110,6 +173,9 @@ class AdapterStore {
     });
 
     this.notify();
+
+    // Sync to backend
+    usersApi.disconnectDigiLocker().catch(() => {});
   }
 
   // Documents
@@ -198,7 +264,7 @@ class AdapterStore {
       timeline,
     };
 
-    // Prepend to applications
+    // Prepend to applications immediately for instant UI feedback
     this.applications = [newApplication, ...this.applications];
     this.persist(STORAGE_KEYS.APPLICATIONS, this.applications);
 
@@ -252,6 +318,28 @@ class AdapterStore {
     });
 
     this.notify();
+
+    // Async persist to MongoDB backend API
+    applicationsApi
+      .submit({
+        serviceId: params.service.id,
+        prefilledFields: params.prefilledFields,
+        userFields: params.userFields,
+        attachedDocs: params.attachedDocs,
+      })
+      .then((serverApp) => {
+        // Synchronize canonical ID and server timeline
+        const idx = this.applications.findIndex((a) => a.id === newId);
+        if (idx !== -1 && serverApp && serverApp.id) {
+          this.applications[idx] = serverApp;
+          this.persist(STORAGE_KEYS.APPLICATIONS, this.applications);
+          this.notify();
+        }
+      })
+      .catch((err) => {
+        console.debug('[AdapterStore] Backend submit fallback to local storage:', err);
+      });
+
     return newApplication;
   }
 
@@ -282,16 +370,26 @@ class AdapterStore {
 
       // Update timeline items
       if (nextStatus === 'Under Verification') {
-        app.timeline[2].status = 'completed';
-        app.timeline[2].timestamp = nowFormatted;
-        app.timeline[3].status = 'current';
+        if (app.timeline[2]) {
+          app.timeline[2].status = 'completed';
+          app.timeline[2].timestamp = nowFormatted;
+        }
+        if (app.timeline[3]) {
+          app.timeline[3].status = 'current';
+        }
       } else if (nextStatus === 'Under Review') {
-        app.timeline[3].status = 'completed';
-        app.timeline[3].timestamp = nowFormatted;
-        app.timeline[4].status = 'current';
+        if (app.timeline[3]) {
+          app.timeline[3].status = 'completed';
+          app.timeline[3].timestamp = nowFormatted;
+        }
+        if (app.timeline[4]) {
+          app.timeline[4].status = 'current';
+        }
       } else if (nextStatus === 'Approved') {
-        app.timeline[4].status = 'completed';
-        app.timeline[4].timestamp = nowFormatted;
+        if (app.timeline[4]) {
+          app.timeline[4].status = 'completed';
+          app.timeline[4].timestamp = nowFormatted;
+        }
       }
 
       this.persist(STORAGE_KEYS.APPLICATIONS, this.applications);
@@ -306,6 +404,11 @@ class AdapterStore {
       });
 
       this.notify();
+
+      // Async backend sync
+      applicationsApi.advanceStatus(applicationId).catch((err) => {
+        console.debug('[AdapterStore] Backend status advance fallback to local:', err);
+      });
     }
 
     return app;
@@ -342,6 +445,12 @@ class AdapterStore {
     });
 
     this.notify();
+
+    // Async backend sync
+    consentsApi.revoke(permissionId).catch((err) => {
+      console.debug('[AdapterStore] Backend consent revoke fallback to local:', err);
+    });
+
     return true;
   }
 
@@ -382,6 +491,11 @@ class AdapterStore {
     this.persist(STORAGE_KEYS.DIGILOCKER_DOCS, this.digiLockerDocs);
 
     this.notify();
+
+    // Async reset backend MongoDB seed
+    usersApi.resetSeed().catch((err) => {
+      console.debug('[AdapterStore] Backend seed reset notice:', err);
+    });
   }
 }
 
