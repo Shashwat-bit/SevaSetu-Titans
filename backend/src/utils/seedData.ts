@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
-import { User } from '../models/User';
+import bcrypt from 'bcryptjs';
+import { User, UserRole } from '../models/User';
 import { Department } from '../models/Department';
 import { Service } from '../models/Service';
 import { Application } from '../models/Application';
@@ -9,18 +10,71 @@ import { Activity } from '../models/Activity';
 import { connectDB } from '../config/db';
 import { logger } from './logger';
 
-export const SEED_USER = {
-  citizenId: 'cit-001',
-  name: 'Tanishka',
-  email: 'tanishka@example.com',
-  phone: '+91 98765 43210',
-  maskedAadhaar: 'XXXX-XXXX-4921',
-  address: 'Flat 402, Sector 14, Gandhinagar, Gujarat - 382016',
-  dateOfBirth: '14/05/2002',
-  gender: 'Female',
-  isDigiLockerConnected: true,
-  connectedAt: '01 September 2026, 09:00 AM',
+export const DEMO_PASSWORDS = {
+  CITIZEN: 'Citizen@123',
+  OFFICER_EDU: 'Officer@Edu123',
+  OFFICER_REV: 'Officer@Rev123',
+  OFFICER_TRANS: 'Officer@Trans123',
+  ADMIN: 'Admin@123',
 };
+
+export const SEED_USERS = [
+  {
+    citizenId: 'cit-001',
+    name: 'Tanishka',
+    email: 'tanishka@example.com',
+    phone: '+91 98765 43210',
+    maskedAadhaar: 'XXXX-XXXX-4921',
+    address: 'Flat 402, Sector 14, Gandhinagar, Gujarat - 382016',
+    dateOfBirth: '14/05/2002',
+    gender: 'Female',
+    isDigiLockerConnected: true,
+    connectedAt: '01 September 2026, 09:00 AM',
+    role: 'citizen' as UserRole,
+    passwordHash: bcrypt.hashSync(DEMO_PASSWORDS.CITIZEN, 10),
+  },
+  {
+    citizenId: 'officer-edu-001',
+    name: 'Dr. Arvind Sharma (Higher Education Officer)',
+    email: 'officer.edu@gov.in',
+    phone: '+91 94280 11223',
+    role: 'officer' as UserRole,
+    departmentId: 'dept-edu',
+    isDigiLockerConnected: false,
+    passwordHash: bcrypt.hashSync(DEMO_PASSWORDS.OFFICER_EDU, 10),
+  },
+  {
+    citizenId: 'officer-rev-001',
+    name: 'Smt. Rekha Patel (Mamlatdar / Revenue Officer)',
+    email: 'officer.rev@gov.in',
+    phone: '+91 94280 44556',
+    role: 'officer' as UserRole,
+    departmentId: 'dept-rev',
+    isDigiLockerConnected: false,
+    passwordHash: bcrypt.hashSync(DEMO_PASSWORDS.OFFICER_REV, 10),
+  },
+  {
+    citizenId: 'officer-trans-001',
+    name: 'Shri Vikram Desai (RTO Transport Officer)',
+    email: 'officer.trans@gov.in',
+    phone: '+91 94280 77889',
+    role: 'officer' as UserRole,
+    departmentId: 'dept-trans',
+    isDigiLockerConnected: false,
+    passwordHash: bcrypt.hashSync(DEMO_PASSWORDS.OFFICER_TRANS, 10),
+  },
+  {
+    citizenId: 'admin-001',
+    name: 'SevaSetu System Administrator',
+    email: 'admin@sevasetu.gov.in',
+    phone: '+91 99999 00000',
+    role: 'admin' as UserRole,
+    isDigiLockerConnected: false,
+    passwordHash: bcrypt.hashSync(DEMO_PASSWORDS.ADMIN, 10),
+  },
+];
+
+export const SEED_USER = SEED_USERS[0];
 
 export const SEED_DEPARTMENTS = [
   {
@@ -485,8 +539,8 @@ export async function seedDatabase(): Promise<{ success: boolean; message: strin
     await Consent.deleteMany({});
     await Activity.deleteMany({});
 
-    // Seed Demo User
-    await User.create(SEED_USER);
+    // Seed Demo Users (Citizen, Officers, Admin)
+    await User.insertMany(SEED_USERS);
 
     // Seed Departments
     await Department.insertMany(SEED_DEPARTMENTS);

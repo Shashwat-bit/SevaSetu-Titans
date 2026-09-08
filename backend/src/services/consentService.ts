@@ -3,7 +3,7 @@ import { Activity } from '../models/Activity';
 import { AppError } from '../middleware/errorHandler';
 
 export interface CreateConsentDto {
-  citizenId?: string;
+  citizenId: string;
   departmentId: string;
   whoHasAccess: string;
   whatData: string[];
@@ -15,14 +15,17 @@ export interface CreateConsentDto {
 }
 
 export class ConsentService {
-  async getConsents(citizenId: string = 'cit-001'): Promise<IConsent[]> {
+  async getConsents(citizenId: string): Promise<IConsent[]> {
     return Consent.find({ citizenId }).sort({ createdAt: -1 });
   }
 
-  async getConsentById(consentId: string): Promise<IConsent> {
+  async getConsentById(consentId: string, citizenId: string): Promise<IConsent> {
     const consent = await Consent.findOne({ consentId });
     if (!consent) {
       throw new AppError(`Consent permission ${consentId} not found`, 404);
+    }
+    if (consent.citizenId !== citizenId) {
+      throw new AppError('Forbidden. You may only view your own consent records.', 403);
     }
     return consent;
   }
@@ -31,7 +34,7 @@ export class ConsentService {
     const consentId = `perm-${Date.now()}`;
     const consent = await Consent.create({
       consentId,
-      citizenId: dto.citizenId || 'cit-001',
+      citizenId: dto.citizenId,
       departmentId: dto.departmentId,
       whoHasAccess: dto.whoHasAccess,
       whatData: dto.whatData,
@@ -60,10 +63,15 @@ export class ConsentService {
     return consent;
   }
 
-  async revokeConsent(consentId: string): Promise<IConsent> {
+  async revokeConsent(consentId: string, citizenId: string): Promise<IConsent> {
     const consent = await Consent.findOne({ consentId });
     if (!consent) {
       throw new AppError(`Consent permission ${consentId} not found`, 404);
+    }
+
+    // Ownership check: citizen can only revoke their own consent
+    if (consent.citizenId !== citizenId) {
+      throw new AppError('Forbidden. You may only revoke your own consent.', 403);
     }
 
     if (consent.status === 'Access Revoked') {

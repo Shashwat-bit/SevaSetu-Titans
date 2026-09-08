@@ -21,6 +21,7 @@ interface ProfilePageProps {
   onOpenOnboarding: () => void;
   onResetDemo: () => void;
   onLogout: () => void;
+  onOpenAuthModal?: () => void;
 }
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({
@@ -29,8 +30,21 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   onOpenOnboarding,
   onResetDemo,
   onLogout,
+  onOpenAuthModal,
 }) => {
   const [resetting, setResetting] = useState(false);
+
+  const isOfficer = citizen.role === 'officer';
+  const isAdmin = citizen.role === 'admin';
+
+  const deptName =
+    citizen.departmentId === 'dept-edu'
+      ? 'Education Department'
+      : citizen.departmentId === 'dept-rev'
+      ? 'Revenue Department'
+      : citizen.departmentId === 'dept-trans'
+      ? 'Transport Department'
+      : 'Department';
 
   const handleReset = () => {
     setResetting(true);
@@ -52,25 +66,55 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-extrabold text-navy-900 tracking-tight">{citizen.name}</h1>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                  Citizen Account
-                </span>
+                {isOfficer ? (
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                    <Building2 className="w-3.5 h-3.5" />
+                    Officer ({deptName})
+                  </span>
+                ) : isAdmin ? (
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-300">
+                    System Admin
+                  </span>
+                ) : (
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                    Citizen Account
+                  </span>
+                )}
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Aadhaar: <span className="font-mono text-slate-700">{citizen.maskedAadhaar}</span> &bull; DOB:{' '}
-                {citizen.dateOfBirth} &bull; Gender: {citizen.gender}
-              </p>
+              {isOfficer ? (
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Officer ID: <span className="font-mono text-slate-700">{citizen.id}</span> &bull; Scope:{' '}
+                  <span className="font-semibold text-slate-700">{deptName} ({citizen.departmentId})</span> &bull; Email:{' '}
+                  <span className="font-mono text-slate-700">{citizen.email}</span>
+                </p>
+              ) : (
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Aadhaar: <span className="font-mono text-slate-700">{citizen.maskedAadhaar}</span> &bull; DOB:{' '}
+                  {citizen.dateOfBirth} &bull; Gender: {citizen.gender}
+                </p>
+              )}
               <p className="text-xs text-slate-500 mt-0.5">{citizen.address}</p>
             </div>
           </div>
 
-          <button
-            onClick={onLogout}
-            className="px-4 py-2 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Sign Out / Switch</span>
-          </button>
+          <div className="flex items-center gap-2">
+            {onOpenAuthModal && (
+              <button
+                onClick={onOpenAuthModal}
+                className="px-3.5 py-2 bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-amber-600" />
+                <span>Switch Persona</span>
+              </button>
+            )}
+            <button
+              onClick={onLogout}
+              className="px-4 py-2 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign Out</span>
+            </button>
+          </div>
         </div>
       </div>
 

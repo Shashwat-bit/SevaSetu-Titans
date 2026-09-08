@@ -3,16 +3,20 @@ import { AppError } from '../middleware/errorHandler';
 import { Activity } from '../models/Activity';
 
 export class UserService {
-  async getCurrentUser(): Promise<IUser> {
-    const user = await User.findOne({ citizenId: 'cit-001' });
+  async getCurrentUser(citizenId: string): Promise<Partial<IUser>> {
+    const user = await User.findOne({ citizenId }).select('-passwordHash');
     if (!user) {
-      throw new AppError('Demo user not found. Please run seed.', 404);
+      throw new AppError(`User with ID ${citizenId} not found.`, 404);
     }
     return user;
   }
 
-  async connectDigiLocker(): Promise<IUser> {
-    const user = await this.getCurrentUser();
+  async connectDigiLocker(citizenId: string): Promise<Partial<IUser>> {
+    const user = await User.findOne({ citizenId });
+    if (!user) {
+      throw new AppError(`User with ID ${citizenId} not found.`, 404);
+    }
+
     user.isDigiLockerConnected = true;
     user.connectedAt = new Date().toLocaleDateString('en-GB', {
       day: '2-digit',
@@ -36,11 +40,15 @@ export class UserService {
       timestamp: user.connectedAt,
     });
 
-    return user;
+    return User.findOne({ citizenId }).select('-passwordHash') as any;
   }
 
-  async disconnectDigiLocker(): Promise<IUser> {
-    const user = await this.getCurrentUser();
+  async disconnectDigiLocker(citizenId: string): Promise<Partial<IUser>> {
+    const user = await User.findOne({ citizenId });
+    if (!user) {
+      throw new AppError(`User with ID ${citizenId} not found.`, 404);
+    }
+
     user.isDigiLockerConnected = false;
     await user.save();
 
@@ -65,7 +73,7 @@ export class UserService {
       timestamp: nowFormatted,
     });
 
-    return user;
+    return User.findOne({ citizenId }).select('-passwordHash') as any;
   }
 }
 

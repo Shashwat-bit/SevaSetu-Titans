@@ -8,9 +8,11 @@ import documentRoutes from './documentRoutes';
 import consentRoutes from './consentRoutes';
 import activityRoutes from './activityRoutes';
 import seedRoutes from './seedRoutes';
+import authRoutes from './authRoutes';
 
 const apiRouter = Router();
 
+apiRouter.use('/auth', authRoutes);
 apiRouter.use('/health', healthRoutes);
 apiRouter.use('/users', userRoutes);
 apiRouter.use('/departments', departmentRoutes);

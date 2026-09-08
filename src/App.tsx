@@ -25,6 +25,7 @@ import { ActivityPage } from './pages/ActivityPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { OnboardingModal } from './pages/OnboardingModal';
 import { ApplicationFlowModal } from './pages/ApplicationFlowModal';
+import { AuthModal } from './components/common/AuthModal';
 
 export const App: React.FC = () => {
   // Store States
@@ -40,11 +41,17 @@ export const App: React.FC = () => {
   // Modal States
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [selectedServiceForApply, setSelectedServiceForApply] = useState<ServiceItem | null>(null);
   const [selectedAppIdForTracking, setSelectedAppIdForTracking] = useState<string | null>(null);
 
-  // Subscribe to adapter store changes
+  // Subscribe to adapter store changes and 401 unauthorized events
   useEffect(() => {
+    const handleUnauthorized = () => {
+      setIsAuthModalOpen(true);
+    };
+    window.addEventListener('sevasetu-unauthorized', handleUnauthorized);
+
     const unsubscribe = adapterStore.subscribe(() => {
       setCitizen(adapterStore.getCitizen());
       setApplications(adapterStore.getApplications());
@@ -53,7 +60,10 @@ export const App: React.FC = () => {
       setDigiLockerDocs(adapterStore.getDigiLockerDocs());
     });
 
-    return () => unsubscribe();
+    return () => {
+      window.removeEventListener('sevasetu-unauthorized', handleUnauthorized);
+      unsubscribe();
+    };
   }, []);
 
   // Handlers
@@ -88,6 +98,7 @@ export const App: React.FC = () => {
         citizen={citizen}
         onOpenHowItWorks={() => setIsHowItWorksOpen(true)}
         onOpenOnboarding={() => setIsOnboardingOpen(true)}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
       />
 
       {/* Main 6-tab Navigation */}
@@ -136,6 +147,7 @@ export const App: React.FC = () => {
             applications={applications}
             selectedAppId={selectedAppIdForTracking}
             onClearSelectedApp={() => setSelectedAppIdForTracking(null)}
+            citizen={citizen}
           />
         )}
 
@@ -156,8 +168,10 @@ export const App: React.FC = () => {
             digiLockerDocs={digiLockerDocs}
             onOpenOnboarding={() => setIsOnboardingOpen(true)}
             onResetDemo={handleResetDemo}
+            onOpenAuthModal={() => setIsAuthModalOpen(true)}
             onLogout={() => {
-              setIsOnboardingOpen(true);
+              adapterStore.logout();
+              setIsAuthModalOpen(true);
             }}
           />
         )}
@@ -191,6 +205,17 @@ export const App: React.FC = () => {
         digiLockerDocs={digiLockerDocs}
         onApplicationSubmitted={handleApplicationSubmitted}
         onTrackApplication={handleTrackApplication}
+      />
+
+      {/* Auth & Persona Switch Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        currentUser={citizen}
+        onAuthSuccess={(updatedCitizen) => {
+          setCitizen(updatedCitizen);
+          setIsAuthModalOpen(false);
+        }}
       />
     </div>
   );

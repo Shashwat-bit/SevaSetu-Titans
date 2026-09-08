@@ -1,37 +1,35 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { consentService } from '../services/consentService';
+import { AuthRequest } from '../middleware/authMiddleware';
 import { AppError } from '../middleware/errorHandler';
 
-export async function getConsents(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function getConsents(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
-    const citizenId = (req.query.citizenId as string) || 'cit-001';
-    const consents = await consentService.getConsents(citizenId);
+    if (!req.user) {
+      throw new AppError('Unauthorized', 401);
+    }
+    const consents = await consentService.getConsents(req.user.citizenId);
     res.status(200).json({ success: true, count: consents.length, data: consents });
   } catch (error) {
     next(error);
   }
 }
 
-export async function createConsent(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function createConsent(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
-    const {
-      departmentId,
-      whoHasAccess,
-      whatData,
-      whyPurpose,
-      whichApplicationId,
-      whichServiceName,
-      fromWhen,
-      untilWhen,
-      citizenId,
-    } = req.body;
+    if (!req.user) {
+      throw new AppError('Unauthorized', 401);
+    }
+
+    const { departmentId, whoHasAccess, whatData, whyPurpose, whichApplicationId, whichServiceName, fromWhen, untilWhen } = req.body;
 
     if (!departmentId || !whoHasAccess || !whichApplicationId || !whichServiceName) {
       throw new AppError('Missing required consent fields', 400);
     }
 
+    // citizenId strictly extracted from verified JWT
     const consent = await consentService.createConsent({
-      citizenId: citizenId || 'cit-001',
+      citizenId: req.user.citizenId,
       departmentId,
       whoHasAccess,
       whatData: whatData || [],
@@ -48,9 +46,12 @@ export async function createConsent(req: Request, res: Response, next: NextFunct
   }
 }
 
-export async function revokeConsent(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function revokeConsent(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
-    const consent = await consentService.revokeConsent(req.params.id);
+    if (!req.user) {
+      throw new AppError('Unauthorized', 401);
+    }
+    const consent = await consentService.revokeConsent(req.params.id, req.user.citizenId);
     res.status(200).json({
       success: true,
       data: consent,

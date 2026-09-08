@@ -1,4 +1,6 @@
 import { Activity, IActivity } from '../models/Activity';
+import { Department } from '../models/Department';
+import { AuthTokenPayload } from '../middleware/authMiddleware';
 
 export interface CreateActivityDto {
   citizenId?: string;
@@ -13,11 +15,24 @@ export interface CreateActivityDto {
 }
 
 export class ActivityService {
-  async getActivities(citizenId: string = 'cit-001', type?: string): Promise<IActivity[]> {
-    const filter: Record<string, any> = { citizenId };
+  async getActivitiesForUser(user: AuthTokenPayload, type?: string): Promise<IActivity[]> {
+    const filter: Record<string, any> = {};
+
+    if (user.role === 'citizen') {
+      filter.citizenId = user.citizenId;
+    } else if (user.role === 'officer' && user.departmentId) {
+      const dept = await Department.findOne({ departmentId: user.departmentId });
+      const deptName = dept ? dept.name : '';
+      filter.$or = [
+        { departmentName: { $regex: new RegExp(deptName || user.departmentId, 'i') } },
+        { details: { $regex: new RegExp(user.departmentId, 'i') } },
+      ];
+    }
+
     if (type && type !== 'all') {
       filter.type = type;
     }
+
     return Activity.find(filter).sort({ createdAt: -1 });
   }
 
@@ -32,7 +47,7 @@ export class ActivityService {
 
     return Activity.create({
       activityId: `act-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      citizenId: dto.citizenId || 'cit-001',
+      citizenId: dto.citizenId || 'system',
       applicationId: dto.applicationId,
       serviceName: dto.serviceName,
       departmentName: dto.departmentName,

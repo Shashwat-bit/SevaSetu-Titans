@@ -6,32 +6,54 @@ import { Activity } from '../models/Activity';
 import { getDepartmentAdapter } from '../adapters/adapterFactory';
 import { AppError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
+import { AuthTokenPayload } from '../middleware/authMiddleware';
 
 export interface SubmitApplicationDto {
   serviceId: string;
   prefilledFields: Record<string, IPrefilledField>;
   userFields: Record<string, string>;
   attachedDocs: IAttachedDocument[];
-  citizenId?: string;
+  citizenId: string;
+  citizenName: string;
 }
 
 export class ApplicationService {
-  async getApplications(citizenId: string = 'cit-001'): Promise<IApplication[]> {
-    return Application.find({ citizenId }).sort({ createdAt: -1 });
+  async getApplications(user: AuthTokenPayload): Promise<IApplication[]> {
+    const filter: Record<string, any> = {};
+
+    if (user.role === 'citizen') {
+      filter.citizenId = user.citizenId;
+    } else if (user.role === 'officer') {
+      if (!user.departmentId) {
+        throw new AppError('Officer has no assigned department.', 403);
+      }
+      filter.departmentId = user.departmentId;
+    }
+    // Admin sees all applications
+
+    return Application.find(filter).sort({ createdAt: -1 });
   }
 
-  async getApplicationById(applicationId: string): Promise<IApplication> {
+  async getApplicationByIdWithAccess(applicationId: string, user: AuthTokenPayload): Promise<IApplication> {
     const app = await Application.findOne({ applicationId });
     if (!app) {
       throw new AppError(`Application ${applicationId} not found`, 404);
     }
+
+    if (user.role === 'citizen' && app.citizenId !== user.citizenId) {
+      throw new AppError('Forbidden. You may only view your own applications.', 403);
+    }
+
+    if (user.role === 'officer' && app.departmentId !== user.departmentId) {
+      throw new AppError(`Forbidden. You may only view applications in your department (${user.departmentId}).`, 403);
+    }
+
     return app;
   }
 
   async submitApplication(dto: SubmitApplicationDto): Promise<IApplication> {
-    const citizenId = dto.citizenId || 'cit-001';
-    const user = await User.findOne({ citizenId });
-    const citizenName = user ? user.name : 'Tanishka';
+    const citizenId = dto.citizenId;
+    const citizenName = dto.citizenName || 'Citizen';
 
     const service = await Service.findOne({ serviceId: dto.serviceId });
     if (!service) {
@@ -185,8 +207,18 @@ export class ApplicationService {
     return newApplication;
   }
 
-  async advanceApplicationStatus(applicationId: string): Promise<IApplication> {
-    const app = await this.getApplicationById(applicationId);
+  async advanceApplicationStatus(applicationId: string, officer: AuthTokenPayload): Promise<IApplication> {
+    const app = await Application.findOne({ applicationId });
+    if (!app) {
+      throw new AppError(`Application ${applicationId} not found`, 404);
+    }
+
+    if (officer.role === 'officer' && app.departmentId !== officer.departmentId) {
+      throw new AppError(
+        `Forbidden. You can only advance status for applications belonging to your department (${officer.departmentId}).`,
+        403
+      );
+    }
 
     const statusFlow = ['Submitted', 'Under Verification', 'Under Review', 'Approved'];
     const currentIndex = statusFlow.indexOf(app.status);
@@ -228,7 +260,7 @@ export class ApplicationService {
         serviceName: app.serviceName,
         departmentName: app.departmentName,
         action: `Application status updated to ${nextStatus}`,
-        details: `Simulated adapter event: ${app.applicationId} progressed to ${nextStatus}`,
+        details: `Simulated department action by ${officer.name} (${officer.role.toUpperCase()}): ${app.applicationId} progressed to ${nextStatus}`,
         type: 'status_change',
         statusBadge: nextStatus,
         timestamp: nowFormatted,
@@ -238,8 +270,8 @@ export class ApplicationService {
     return app;
   }
 
-  async getTimeline(applicationId: string): Promise<ITimelineEvent[]> {
-    const app = await this.getApplicationById(applicationId);
+  async getTimeline(applicationId: string, user: AuthTokenPayload): Promise<ITimelineEvent[]> {
+    const app = await this.getApplicationByIdWithAccess(applicationId, user);
     return app.timeline;
   }
 }

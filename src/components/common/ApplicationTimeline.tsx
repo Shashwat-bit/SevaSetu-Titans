@@ -1,17 +1,23 @@
 import React from 'react';
 import { TimelineEvent } from '../../types';
-import { CheckCircle2, Clock, Circle, Play } from 'lucide-react';
+import { CheckCircle2, Clock, Circle, Play, Shield, Building2, AlertCircle } from 'lucide-react';
 
 interface ApplicationTimelineProps {
   timeline: TimelineEvent[];
   onAdvanceStatus?: () => void;
   canAdvance?: boolean;
+  userRole?: string;
+  userDeptName?: string;
+  appDeptName?: string;
 }
 
 export const ApplicationTimeline: React.FC<ApplicationTimelineProps> = ({
   timeline,
   onAdvanceStatus,
   canAdvance = false,
+  userRole = 'citizen',
+  userDeptName,
+  appDeptName,
 }) => {
   return (
     <div className="space-y-4">
@@ -81,21 +87,49 @@ export const ApplicationTimeline: React.FC<ApplicationTimelineProps> = ({
         })}
       </div>
 
-      {/* Demo helper action for judges */}
-      {canAdvance && onAdvanceStatus && (
-        <div className="pt-2">
+      {/* Officer action or security scope guard notice */}
+      {canAdvance && onAdvanceStatus ? (
+        <div className="pt-2 space-y-1.5">
+          <div className="flex items-center justify-between text-[11px] text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg">
+            <span className="font-semibold flex items-center gap-1.5">
+              <Building2 className="w-3.5 h-3.5 text-emerald-600" />
+              Verified Department Scope: {userDeptName || 'Authorized Officer'}
+            </span>
+            <span className="text-[10px] uppercase font-bold text-emerald-700 bg-white px-2 py-0.5 rounded border border-emerald-300">
+              Role: Officer
+            </span>
+          </div>
           <button
             onClick={onAdvanceStatus}
-            className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition-colors"
+            className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-navy-900 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm transition-colors"
           >
             <Play className="w-3.5 h-3.5 text-amber-400" />
-            <span>Simulate Department Processing Advancement (Demo Helper)</span>
+            <span>Advance Simulated Application Status (Officer Action)</span>
           </button>
-          <p className="text-[10px] text-slate-400 text-center mt-1">
-            Simulates department officer acting on this application in their backend system
+          <p className="text-[10px] text-slate-400 text-center">
+            Simulates department officer advancing review stages in backend system
           </p>
         </div>
-      )}
+      ) : userRole === 'officer' && appDeptName && userDeptName && userDeptName !== appDeptName ? (
+        <div className="pt-2">
+          <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold">Department Scope Guard Active</p>
+              <p className="text-[10px] text-amber-700 mt-0.5">
+                You are logged in as a <strong>{userDeptName}</strong> Officer. Only assigned officers can advance applications for <strong>{appDeptName}</strong>.
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : userRole === 'citizen' ? (
+        <div className="pt-2">
+          <div className="text-[11px] text-slate-600 bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex items-center justify-center gap-2 text-center">
+            <Shield className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <span>Citizen view only. Status advancement is restricted to Department Officers.</span>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

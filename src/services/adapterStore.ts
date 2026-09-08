@@ -7,6 +7,7 @@ import {
   ApplicationStatus,
   TimelineEvent,
   ServiceItem,
+  UserRole,
 } from '../types';
 import {
   INITIAL_CITIZEN,
@@ -17,11 +18,13 @@ import {
   MOCK_SERVICES,
 } from '../data/mockData';
 import {
+  authApi,
   usersApi,
   applicationsApi,
   consentsApi,
   activitiesApi,
   documentsApi,
+  AUTH_TOKEN_KEY,
 } from './api';
 
 const STORAGE_KEYS = {
@@ -39,6 +42,7 @@ class AdapterStore {
   private activities: AuditActivity[];
   private digiLockerDocs: DigiLockerMockDocument[];
   private listeners: Set<() => void> = new Set();
+  private isAuthenticating: boolean = false;
 
   constructor() {
     this.citizen = this.load(STORAGE_KEYS.CITIZEN, INITIAL_CITIZEN);
@@ -47,14 +51,40 @@ class AdapterStore {
     this.activities = this.load(STORAGE_KEYS.ACTIVITIES, INITIAL_ACTIVITIES);
     this.digiLockerDocs = this.load(STORAGE_KEYS.DIGILOCKER_DOCS, MOCK_DIGILOCKER_DOCS);
 
-    // Asynchronously synchronize with real backend API if running
-    this.syncFromBackend();
+    // Listen for unauthorized events to clear session
+    if (typeof window !== 'undefined') {
+      window.addEventListener('sevasetu-unauthorized', () => {
+        this.logout();
+      });
+    }
+
+    // Initialize authentication and synchronize with backend API
+    this.initAuthAndSync();
+  }
+
+  private async initAuthAndSync(): Promise<void> {
+    try {
+      const existingToken = localStorage.getItem(AUTH_TOKEN_KEY);
+      if (!existingToken) {
+        // Auto-initialize demo citizen token for seamless experience
+        const res = await authApi.demoSwitch('citizen');
+        localStorage.setItem(AUTH_TOKEN_KEY, res.token);
+        this.citizen = res.user;
+        this.persist(STORAGE_KEYS.CITIZEN, this.citizen);
+      }
+    } catch {
+      // Backend not running, continue with offline demo state
+    }
+    await this.syncFromBackend();
   }
 
   public async syncFromBackend(): Promise<void> {
     try {
+      const token = localStorage.getItem(AUTH_TOKEN_KEY);
+      if (!token) return;
+
       const [user, apps, perms, acts, docs] = await Promise.all([
-        usersApi.getMe().catch(() => null),
+        authApi.getMe().catch(() => null),
         applicationsApi.getAll().catch(() => null),
         consentsApi.getAll().catch(() => null),
         activitiesApi.getAll().catch(() => null),
@@ -69,25 +99,25 @@ class AdapterStore {
         changed = true;
       }
 
-      if (apps && apps.length > 0) {
+      if (apps) {
         this.applications = apps;
         this.persist(STORAGE_KEYS.APPLICATIONS, this.applications);
         changed = true;
       }
 
-      if (perms && perms.length > 0) {
+      if (perms) {
         this.permissions = perms;
         this.persist(STORAGE_KEYS.PERMISSIONS, this.permissions);
         changed = true;
       }
 
-      if (acts && acts.length > 0) {
+      if (acts) {
         this.activities = acts;
         this.persist(STORAGE_KEYS.ACTIVITIES, this.activities);
         changed = true;
       }
 
-      if (docs && docs.length > 0) {
+      if (docs) {
         this.digiLockerDocs = docs;
         this.persist(STORAGE_KEYS.DIGILOCKER_DOCS, this.digiLockerDocs);
         changed = true;
@@ -97,8 +127,78 @@ class AdapterStore {
         this.notify();
       }
     } catch {
-      // Backend not running or offline, gracefully continue with localStorage cache
+      // Offline fallback
     }
+  }
+
+  // Authentication & Demo Persona Management
+  public async switchPersona(persona: 'citizen' | 'officer-edu' | 'officer-rev' | 'officer-trans' | 'admin'): Promise<Citizen> {
+    this.isAuthenticating = true;
+    try {
+      const res = await authApi.demoSwitch(persona);
+      localStorage.setItem(AUTH_TOKEN_KEY, res.token);
+      this.citizen = res.user;
+      this.persist(STORAGE_KEYS.CITIZEN, this.citizen);
+      await this.syncFromBackend();
+      this.notify();
+      return this.citizen;
+    } finally {
+      this.isAuthenticating = false;
+    }
+  }
+
+  public async login(email: string, password: string): Promise<Citizen> {
+    this.isAuthenticating = true;
+    try {
+      const res = await authApi.login(email, password);
+      localStorage.setItem(AUTH_TOKEN_KEY, res.token);
+      this.citizen = res.user;
+      this.persist(STORAGE_KEYS.CITIZEN, this.citizen);
+      await this.syncFromBackend();
+      this.notify();
+      return this.citizen;
+    } finally {
+      this.isAuthenticating = false;
+    }
+  }
+
+  public logout(): void {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    this.citizen = {
+      ...INITIAL_CITIZEN,
+      id: 'unauthenticated',
+      name: 'Guest / Signed Out',
+      email: '',
+      phone: '',
+      maskedAadhaar: '',
+      address: '',
+      isDigiLockerConnected: false,
+      role: 'citizen',
+    };
+    this.applications = [];
+    this.permissions = [];
+    this.activities = [];
+    this.notify();
+  }
+
+  public isAuthenticated(): boolean {
+    return !!localStorage.getItem(AUTH_TOKEN_KEY) && this.citizen.id !== 'unauthenticated';
+  }
+
+  public isOfficer(): boolean {
+    return this.citizen.role === 'officer';
+  }
+
+  public isAdmin(): boolean {
+    return this.citizen.role === 'admin';
+  }
+
+  public getRole(): UserRole {
+    return this.citizen.role || 'citizen';
+  }
+
+  public getDepartmentId(): string | undefined {
+    return this.citizen.departmentId;
   }
 
   private load<T>(key: string, defaultValue: T): T {
@@ -264,7 +364,7 @@ class AdapterStore {
       timeline,
     };
 
-    // Prepend to applications immediately for instant UI feedback
+    // Prepend to applications immediately
     this.applications = [newApplication, ...this.applications];
     this.persist(STORAGE_KEYS.APPLICATIONS, this.applications);
 
@@ -328,7 +428,6 @@ class AdapterStore {
         attachedDocs: params.attachedDocs,
       })
       .then((serverApp) => {
-        // Synchronize canonical ID and server timeline
         const idx = this.applications.findIndex((a) => a.id === newId);
         if (idx !== -1 && serverApp && serverApp.id) {
           this.applications[idx] = serverApp;
@@ -343,10 +442,20 @@ class AdapterStore {
     return newApplication;
   }
 
-  // Advance application status for demo demonstration
-  public advanceApplicationStatus(applicationId: string): Application | undefined {
+  // Advance application status (Department Officer action)
+  public async advanceApplicationStatus(applicationId: string): Promise<Application | undefined> {
     const app = this.applications.find((a) => a.id === applicationId);
     if (!app) return undefined;
+
+    // Authorization checks
+    if (!this.isOfficer() && !this.isAdmin()) {
+      console.warn('[AdapterStore] Only department officers or admins can advance application status');
+      return undefined;
+    }
+    if (this.isOfficer() && this.citizen.departmentId && app.departmentId !== this.citizen.departmentId) {
+      console.warn(`[AdapterStore] Officer (${this.citizen.departmentId}) cannot advance status of ${app.departmentId}`);
+      return undefined;
+    }
 
     const statusFlow: ApplicationStatus[] = [
       'Submitted',
@@ -405,10 +514,20 @@ class AdapterStore {
 
       this.notify();
 
-      // Async backend sync
-      applicationsApi.advanceStatus(applicationId).catch((err) => {
-        console.debug('[AdapterStore] Backend status advance fallback to local:', err);
-      });
+      // Async backend sync via officer token
+      try {
+        const serverApp = await applicationsApi.advanceStatus(applicationId);
+        if (serverApp) {
+          const idx = this.applications.findIndex((a) => a.id === applicationId);
+          if (idx !== -1) {
+            this.applications[idx] = serverApp;
+            this.persist(STORAGE_KEYS.APPLICATIONS, this.applications);
+            this.notify();
+          }
+        }
+      } catch (err) {
+        console.debug('[AdapterStore] Backend status advance notice:', err);
+      }
     }
 
     return app;
@@ -492,8 +611,11 @@ class AdapterStore {
 
     this.notify();
 
-    // Async reset backend MongoDB seed
-    usersApi.resetSeed().catch((err) => {
+    // In dev mode, can reseed database
+    fetch('http://localhost:5000/api/seed', {
+      method: 'POST',
+      headers: { 'x-dev-seed-key': 'sevasetu-dev-seed-bypass' },
+    }).catch((err) => {
       console.debug('[AdapterStore] Backend seed reset notice:', err);
     });
   }

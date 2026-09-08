@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Application } from '../types';
+import { Application, Citizen } from '../types';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { ApplicationTimeline } from '../components/common/ApplicationTimeline';
 import { adapterStore } from '../services/adapterStore';
@@ -22,13 +22,30 @@ interface MyApplicationsPageProps {
   applications: Application[];
   selectedAppId?: string | null;
   onClearSelectedApp?: () => void;
+  citizen?: Citizen;
 }
 
 export const MyApplicationsPage: React.FC<MyApplicationsPageProps> = ({
   applications,
   selectedAppId,
   onClearSelectedApp,
+  citizen,
 }) => {
+  const currentCitizen = citizen || adapterStore.getCitizen();
+  const userRole = currentCitizen.role || 'citizen';
+  const userDeptId = currentCitizen.departmentId;
+  const isOfficer = userRole === 'officer';
+  const isAdmin = userRole === 'admin';
+
+  const userDeptName =
+    userDeptId === 'dept-edu'
+      ? 'Education Department'
+      : userDeptId === 'dept-rev'
+      ? 'Revenue Department'
+      : userDeptId === 'dept-trans'
+      ? 'Transport Department'
+      : 'Assigned Department';
+
   const [filterTab, setFilterTab] = useState<'active' | 'completed' | 'all'>('active');
   const [searchQuery, setSearchQuery] = useState('');
   const [trackingApp, setTrackingApp] = useState<Application | null>(() => {
@@ -66,8 +83,8 @@ export const MyApplicationsPage: React.FC<MyApplicationsPageProps> = ({
     );
   });
 
-  const handleAdvanceStatus = (appId: string) => {
-    const updated = adapterStore.advanceApplicationStatus(appId);
+  const handleAdvanceStatus = async (appId: string) => {
+    const updated = await adapterStore.advanceApplicationStatus(appId);
     if (updated) {
       setTrackingApp({ ...updated });
     }
@@ -79,9 +96,21 @@ export const MyApplicationsPage: React.FC<MyApplicationsPageProps> = ({
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-extrabold text-navy-900 tracking-tight">My Applications</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-extrabold text-navy-900 tracking-tight">
+                {isOfficer ? 'Department Applications' : 'My Applications'}
+              </h1>
+              {isOfficer && (
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                  <Building2 className="w-3.5 h-3.5" />
+                  {userDeptName} Portal
+                </span>
+              )}
+            </div>
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-              Track status, review pre-filled credentials, and inspect department audit trails for all your applications.
+              {isOfficer
+                ? `Authorized review console for ${userDeptName}. Verify applicant credentials and advance processing stages.`
+                : 'Track status, review pre-filled credentials, and inspect department audit trails for all your applications.'}
             </p>
           </div>
 
@@ -271,8 +300,15 @@ export const MyApplicationsPage: React.FC<MyApplicationsPageProps> = ({
 
                 <ApplicationTimeline
                   timeline={trackingApp.timeline}
-                  canAdvance={trackingApp.status !== 'Approved' && trackingApp.status !== 'Rejected'}
+                  canAdvance={
+                    (isAdmin || (isOfficer && userDeptId === trackingApp.departmentId)) &&
+                    trackingApp.status !== 'Approved' &&
+                    trackingApp.status !== 'Rejected'
+                  }
                   onAdvanceStatus={() => handleAdvanceStatus(trackingApp.id)}
+                  userRole={userRole}
+                  userDeptName={userDeptName}
+                  appDeptName={trackingApp.departmentName}
                 />
               </div>
 

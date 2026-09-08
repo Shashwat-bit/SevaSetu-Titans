@@ -5,6 +5,8 @@ export type ApplicationStatus =
   | 'Approved'
   | 'Rejected';
 
+export type UserRole = 'citizen' | 'officer' | 'admin';
+
 export interface Citizen {
   id: string;
   name: string;
@@ -16,6 +18,8 @@ export interface Citizen {
   gender: string;
   isDigiLockerConnected: boolean;
   connectedAt?: string;
+  role?: UserRole;
+  departmentId?: string;
 }
 
 export interface Department {
