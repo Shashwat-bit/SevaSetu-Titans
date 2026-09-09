@@ -220,3 +220,103 @@ export interface ServiceRequirements {
   requiredFields: string[];
   normalizedRequiredTypes: string[];
 }
+
+export type NotificationType =
+  | 'application_submitted'
+  | 'status_change'
+  | 'application_approved'
+  | 'application_rejected'
+  | 'consent_revoked'
+  | 'document_verified'
+  | 'document_rejected'
+  | 'system';
+
+export interface NotificationItem {
+  id?: string;
+  notificationId: string;
+  recipientRole: 'citizen' | 'officer' | 'admin';
+  citizenId?: string;
+  departmentId?: string;
+  applicationId?: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  isRead: boolean;
+  readAt?: string;
+  metadata?: Record<string, any>;
+  createdAt: string;
+}
+
+export interface AdminOverviewStats {
+  stats: {
+    totalApplications: number;
+    totalCitizens: number;
+    totalOfficers: number;
+    totalDepartments: number;
+    totalServices: number;
+    totalConsents: number;
+    totalExchanges: number;
+    totalActivities: number;
+  };
+  adapterHealth: SimulatedAdapterHealth[];
+}
+
+export interface ApplicationAnalytics {
+  totalApplications: number;
+  approvalRate: number;
+  approvedCount: number;
+  rejectedCount: number;
+  pendingCount: number;
+  byStatus: { status: string; count: number }[];
+  byDepartment: { departmentId: string; departmentName: string; count: number }[];
+  byService: { serviceId: string; serviceName: string; departmentName?: string; count: number }[];
+}
+
+export interface ConsentAnalytics {
+  total: number;
+  active: number;
+  revoked: number;
+  expired: number;
+  denied: number;
+  activeRate: number;
+  revocationRate: number;
+  byDepartment: { departmentId: string; whoHasAccess: string; count: number }[];
+}
+
+export interface DataExchangeAnalytics {
+  total: number;
+  fetched: number;
+  denied: number;
+  successRate: number;
+  byTargetDepartment: { departmentId: string; count: number }[];
+  bySourceSystem: { sourceSystem: string; count: number }[];
+  byNormalizedType: { normalizedType: string; count: number }[];
+}
+
+export interface ProcessingMetrics {
+  totalDocumentsProcessed: number;
+  verifiedDocuments: number;
+  rejectedDocuments: number;
+  pendingDocuments: number;
+  documentVerificationRate: number;
+}
+
+export interface AnalyticsData {
+  applications: ApplicationAnalytics;
+  consents: ConsentAnalytics;
+  exchanges: DataExchangeAnalytics;
+  processing: ProcessingMetrics;
+}
+
+export interface DepartmentAnalyticsMetric {
+  departmentId: string;
+  departmentName: string;
+  code: string;
+  totalApplications: number;
+  approvedApplications: number;
+  rejectedApplications: number;
+  pendingApplications: number;
+  officersCount: number;
+  approvalRate: number;
+}
+

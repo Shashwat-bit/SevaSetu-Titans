@@ -9,3 +9,5 @@ export * from './activitiesApi';
 export * from './usersApi';
 export * from './officerApi';
 export * from './interopApi';
+export * from './adminApi';
+export * from './notificationsApi';

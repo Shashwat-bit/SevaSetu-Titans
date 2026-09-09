@@ -1,6 +1,7 @@
 import { Consent, IConsent } from '../models/Consent';
 import { Activity } from '../models/Activity';
 import { AppError } from '../middleware/errorHandler';
+import { notificationService } from './notificationService';
 
 export interface CreateConsentDto {
   citizenId: string;
@@ -175,6 +176,27 @@ export class ConsentService {
         consentId: consent.consentId,
         revokedAt: nowFormatted,
       },
+    });
+
+    // Dispatch Notifications
+    await notificationService.createNotification({
+      recipientRole: 'citizen',
+      citizenId: consent.citizenId,
+      applicationId: consent.whichApplicationId,
+      title: 'Consent Access Revoked',
+      message: `You revoked data access permission for ${consent.whichServiceName}.`,
+      type: 'consent_revoked',
+      metadata: { consentId: consent.consentId, departmentId: consent.departmentId },
+    });
+
+    await notificationService.createNotification({
+      recipientRole: 'officer',
+      departmentId: consent.departmentId,
+      applicationId: consent.whichApplicationId,
+      title: 'Consent Revoked by Citizen',
+      message: `Citizen revoked data access consent for application ${consent.whichApplicationId}.`,
+      type: 'consent_revoked',
+      metadata: { consentId: consent.consentId, citizenId: consent.citizenId },
     });
 
     return consent;

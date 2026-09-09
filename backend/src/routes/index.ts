@@ -11,12 +11,16 @@ import seedRoutes from './seedRoutes';
 import authRoutes from './authRoutes';
 import officerRoutes from './officerRoutes';
 import interoperabilityRoutes from './interoperabilityRoutes';
+import notificationRoutes from './notificationRoutes';
+import adminRoutes from './adminRoutes';
 
 const apiRouter = Router();
 
 apiRouter.use('/auth', authRoutes);
 apiRouter.use('/officer', officerRoutes);
 apiRouter.use('/interop', interoperabilityRoutes);
+apiRouter.use('/notifications', notificationRoutes);
+apiRouter.use('/admin', adminRoutes);
 apiRouter.use('/health', healthRoutes);
 apiRouter.use('/users', userRoutes);
 apiRouter.use('/departments', departmentRoutes);

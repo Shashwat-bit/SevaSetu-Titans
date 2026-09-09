@@ -6,6 +6,7 @@ import { Activity } from '../models/Activity';
 import { DataExchange } from '../models/DataExchange';
 import { getDepartmentAdapter } from '../adapters/adapterFactory';
 import { normalizationService } from './normalizationService';
+import { notificationService } from './notificationService';
 import { AppError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
 import { AuthTokenPayload } from '../middleware/authMiddleware';
@@ -296,6 +297,27 @@ export class ApplicationService {
       },
     });
 
+    // 7. Dispatch Notifications
+    await notificationService.createNotification({
+      recipientRole: 'citizen',
+      citizenId,
+      applicationId: newId,
+      title: 'Application Submitted',
+      message: `Your application ${newId} for ${service.title} has been successfully submitted.`,
+      type: 'application_submitted',
+      metadata: { serviceId: service.serviceId, departmentId: service.departmentId },
+    });
+
+    await notificationService.createNotification({
+      recipientRole: 'officer',
+      departmentId: service.departmentId,
+      applicationId: newId,
+      title: 'New Application Received',
+      message: `New application ${newId} for ${service.title} submitted by ${citizenName}.`,
+      type: 'application_submitted',
+      metadata: { serviceId: service.serviceId, citizenId },
+    });
+
     return newApplication;
   }
 
@@ -365,6 +387,16 @@ export class ApplicationService {
           officerName: officer.name,
           departmentId: officer.departmentId,
         },
+      });
+
+      await notificationService.createNotification({
+        recipientRole: 'citizen',
+        citizenId: app.citizenId,
+        applicationId: app.applicationId,
+        title: nextStatus === 'Approved' ? 'Application Approved' : 'Application Status Updated',
+        message: `Your application ${app.applicationId} for ${app.serviceName} is now ${nextStatus}.`,
+        type: nextStatus === 'Approved' ? 'application_approved' : 'status_change',
+        metadata: { status: nextStatus, departmentId: app.departmentId },
       });
     }
 

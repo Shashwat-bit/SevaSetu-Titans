@@ -4,6 +4,7 @@ import { Activity } from '../models/Activity';
 import { AppError } from '../middleware/errorHandler';
 import { AuthTokenPayload } from '../middleware/authMiddleware';
 import { logger } from '../utils/logger';
+import { notificationService } from './notificationService';
 
 export interface OfficerDashboardStats {
   officer: {
@@ -232,6 +233,17 @@ export class OfficerService {
 
     logger.info(`[Officer] Document verified on ${applicationId}: ${doc.name} by ${officer.name} (${officerUserId})`);
 
+    // Create Citizen Notification
+    await notificationService.createNotification({
+      recipientRole: 'citizen',
+      citizenId: app.citizenId,
+      applicationId: app.applicationId,
+      title: 'Document Verified',
+      message: `Document "${doc.name}" on application ${app.applicationId} was verified by ${officer.name}.`,
+      type: 'document_verified',
+      metadata: { docId: doc.docId, name: doc.name, officerId: officerUserId },
+    });
+
     return { application: app, document: doc };
   }
 
@@ -304,6 +316,17 @@ export class OfficerService {
     });
 
     logger.info(`[Officer] Document rejected on ${applicationId}: ${doc.name} by ${officer.name} (${officerUserId})`);
+
+    // Create Citizen Notification
+    await notificationService.createNotification({
+      recipientRole: 'citizen',
+      citizenId: app.citizenId,
+      applicationId: app.applicationId,
+      title: 'Document Rejected',
+      message: `Document "${doc.name}" on application ${app.applicationId} was rejected. Reason: ${reason.trim()}`,
+      type: 'document_rejected',
+      metadata: { docId: doc.docId, name: doc.name, reason: reason.trim(), officerId: officerUserId },
+    });
 
     return { application: app, document: doc };
   }
@@ -486,6 +509,29 @@ export class OfficerService {
     logger.info(
       `[Officer] Status updated on ${applicationId} to ${normalizedTarget} by ${officer.name} (${officerUserId})`
     );
+
+    // Create Citizen Notification
+    let notifType: any = 'status_change';
+    let notifTitle = 'Application Status Updated';
+    if (normalizedTarget === 'Approved') {
+      notifType = 'application_approved';
+      notifTitle = 'Application Approved';
+    } else if (normalizedTarget === 'Rejected') {
+      notifType = 'application_rejected';
+      notifTitle = 'Application Rejected';
+    }
+
+    await notificationService.createNotification({
+      recipientRole: 'citizen',
+      citizenId: app.citizenId,
+      applicationId: app.applicationId,
+      title: notifTitle,
+      message: `Application ${app.applicationId} (${app.serviceName}) status updated to ${normalizedTarget}${
+        reason ? `: "${reason.trim()}"` : '.'
+      }`,
+      type: notifType,
+      metadata: { status: normalizedTarget, reason: reason?.trim(), departmentId: officer.departmentId },
+    });
 
     return app;
   }

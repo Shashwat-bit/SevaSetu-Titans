@@ -8,6 +8,7 @@ import { CitizenDocument } from '../models/Document';
 import { Consent } from '../models/Consent';
 import { Activity } from '../models/Activity';
 import { DataExchange } from '../models/DataExchange';
+import { Notification } from '../models/Notification';
 import { connectDB } from '../config/db';
 import { logger } from './logger';
 
@@ -700,6 +701,75 @@ export const SEED_DATA_EXCHANGES = [
   },
 ];
 
+export const SEED_NOTIFICATIONS = [
+  {
+    notificationId: 'notif-demo-001',
+    recipientRole: 'citizen' as const,
+    citizenId: 'cit-001',
+    applicationId: 'SS-2026-001024',
+    title: 'Application Submitted',
+    message: 'Your Post-Matric Scholarship application SS-2026-001024 has been submitted to Higher Education.',
+    type: 'application_submitted' as const,
+    isRead: false,
+    metadata: { serviceId: 'srv-postmatric-01', departmentId: 'dept-edu' },
+  },
+  {
+    notificationId: 'notif-demo-002',
+    recipientRole: 'citizen' as const,
+    citizenId: 'cit-001',
+    applicationId: 'SS-2026-001024',
+    title: 'Document Verified',
+    message: 'Your Class 12 Marksheet was cryptographically verified by Dr. Arvind Sharma.',
+    type: 'document_verified' as const,
+    isRead: false,
+    metadata: { docId: 'doc-marksheet' },
+  },
+  {
+    notificationId: 'notif-demo-003',
+    recipientRole: 'citizen' as const,
+    citizenId: 'cit-001',
+    applicationId: 'SS-2026-000842',
+    title: 'Certificate Approved',
+    message: 'Your Income Certificate application SS-2026-000842 was approved by Mamlatdar / Revenue Desk.',
+    type: 'application_approved' as const,
+    isRead: true,
+    readAt: '05 Sep 2026, 11:30 AM',
+    metadata: { serviceId: 'srv-income-01' },
+  },
+  {
+    notificationId: 'notif-demo-004',
+    recipientRole: 'officer' as const,
+    departmentId: 'dept-edu',
+    applicationId: 'SS-2026-001024',
+    title: 'New Application in Department Queue',
+    message: 'New application SS-2026-001024 for Post-Matric Scholarship submitted by Tanishka.',
+    type: 'application_submitted' as const,
+    isRead: false,
+    metadata: { citizenId: 'cit-001' },
+  },
+  {
+    notificationId: 'notif-demo-005',
+    recipientRole: 'officer' as const,
+    departmentId: 'dept-rev',
+    applicationId: 'SS-2026-000842',
+    title: 'Application Pending Final Issuance',
+    message: 'Application SS-2026-000842 has verified credentials and awaits signoff.',
+    type: 'status_change' as const,
+    isRead: true,
+    readAt: '04 Sep 2026, 04:15 PM',
+    metadata: { citizenId: 'cit-001' },
+  },
+  {
+    notificationId: 'notif-demo-006',
+    recipientRole: 'admin' as const,
+    title: 'Interoperability Adapters Online',
+    message: 'All department adapters (Education, Revenue, Transport) are responding normally.',
+    type: 'system' as const,
+    isRead: false,
+    metadata: { systemHealth: 'OPERATIONAL' },
+  },
+];
+
 export async function seedDatabase(): Promise<{ success: boolean; message: string }> {
   try {
     logger.info('Starting database seeding...');
@@ -713,6 +783,7 @@ export async function seedDatabase(): Promise<{ success: boolean; message: strin
     await Consent.deleteMany({});
     await Activity.deleteMany({});
     await DataExchange.deleteMany({});
+    await Notification.deleteMany({});
 
     // Seed Demo Users (Citizen, Officers, Admin)
     const createdUsers = await User.insertMany(SEED_USERS);
@@ -757,6 +828,9 @@ export async function seedDatabase(): Promise<{ success: boolean; message: strin
 
     // Seed Data Exchanges
     await DataExchange.insertMany(SEED_DATA_EXCHANGES);
+
+    // Seed Notifications
+    await Notification.insertMany(SEED_NOTIFICATIONS);
 
     logger.info('Database seeded successfully with pristine demo dataset.');
     return { success: true, message: 'Database seeded successfully with demo records.' };

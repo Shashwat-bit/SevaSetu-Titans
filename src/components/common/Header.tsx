@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Citizen } from '../../types';
 import { Shield, Layers, Globe, User, CheckCircle2, AlertCircle, RefreshCw, KeyRound, Building2, Sun, Moon } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { NotificationBell } from './NotificationBell';
 
 interface HeaderProps {
   citizen: Citizen;
@@ -132,6 +133,9 @@ export const Header: React.FC<HeaderProps> = ({
                 <Moon className="w-4 h-4 text-slate-600 transition-transform" />
               )}
             </button>
+
+            {/* Notification Bell */}
+            <NotificationBell />
 
             {/* DigiLocker Mock Adapter Status (Citizen only) */}
             {citizen.role !== 'officer' && (
