@@ -7,10 +7,36 @@
     --color-gov-navy: #0f172a;
     --color-gov-blue: #1e3a8a;
     --color-gov-accent: #f59e0b;
+
+    --bg-page: #f8fafc;
+    --bg-surface: #ffffff;
+    --bg-surface-secondary: #f1f5f9;
+    --bg-surface-tertiary: #e2e8f0;
+    --border-color: #e2e8f0;
+    --border-subtle: #f1f5f9;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+  }
+
+  .dark {
+    --color-gov-navy: #0b1120;
+    --color-gov-blue: #3b82f6;
+    --color-gov-accent: #f59e0b;
+
+    --bg-page: #0b1120;
+    --bg-surface: #111827;
+    --bg-surface-secondary: #162033;
+    --bg-surface-tertiary: #1e293b;
+    --border-color: #1e293b;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
   }
 
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
+    @apply bg-slate-50 dark:bg-[#0B1120] text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 }
@@ -25,13 +51,43 @@
   background: #f1f5f9;
 }
 
+.dark ::-webkit-scrollbar-track {
+  background: #0b1120;
+}
+
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 9999px;
 }
 
+.dark ::-webkit-scrollbar-thumb {
+  background: #1e293b;
+}
+
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Base form controls in dark mode */
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark input[type="number"],
+.dark input[type="search"],
+.dark select,
+.dark textarea {
+  background-color: #162033;
+  color: #f8fafc;
+  border-color: #1e293b;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b;
 }
 
 /* Animations for active stages & badges */
@@ -50,10 +106,11 @@
 
 /* Verified Data Tag Glow */
 .verified-tag {
-  @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200/80;
+  @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60;
 }
 
 /* Mock Adapter Tag */
 .mock-badge {
-  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-300;
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-700/60;
 }
+

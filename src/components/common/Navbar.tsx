@@ -62,7 +62,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <>
       {/* Desktop Navigation Subheader */}
-      <nav className="hidden md:block bg-navy-900 text-white shadow-md border-b border-navy-800">
+      <nav className="hidden md:block bg-navy-900 dark:bg-[#0B1120] text-white shadow-md border-b border-navy-800 dark:border-slate-800 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-1 py-1.5 overflow-x-auto">
             {navItems.map((item) => {
@@ -75,7 +75,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-lg transition-all whitespace-nowrap ${
                     isActive
                       ? 'bg-brand-600 text-white shadow-sm'
-                      : 'text-slate-300 hover:text-white hover:bg-navy-800/80'
+                      : 'text-slate-300 hover:text-white hover:bg-navy-800/80 dark:hover:bg-slate-800/80'
                   }`}
                 >
                   <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
@@ -97,7 +97,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       </nav>
 
       {/* Mobile Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 shadow-lg px-2 py-1 flex justify-around">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-[#111827] border-t border-slate-200 dark:border-slate-800 shadow-lg px-2 py-1 flex justify-around transition-colors duration-200">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -106,7 +106,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               key={item.id}
               onClick={() => onSelectTab(item.id)}
               className={`flex flex-col items-center py-1 px-2 relative transition-colors ${
-                isActive ? 'text-brand-600 font-bold' : 'text-slate-500'
+                isActive ? 'text-brand-600 dark:text-brand-400 font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               <div className="relative">

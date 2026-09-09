@@ -51,12 +51,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   // Category navigation icons
   const categories = [
-    { id: 'scholarships', label: 'Scholarships', icon: GraduationCap, color: 'text-indigo-600 bg-indigo-50 border-indigo-200' },
-    { id: 'certificates', label: 'Certificates', icon: FileCheck, color: 'text-blue-600 bg-blue-50 border-blue-200' },
-    { id: 'residence', label: 'Residence Services', icon: Home, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-    { id: 'schemes', label: 'Govt. Schemes', icon: Coins, color: 'text-amber-600 bg-amber-50 border-amber-200' },
-    { id: 'transport', label: 'Transport Services', icon: Car, color: 'text-purple-600 bg-purple-50 border-purple-200' },
-    { id: 'welfare', label: 'Social Welfare', icon: Users, color: 'text-rose-600 bg-rose-50 border-rose-200' },
+    { id: 'scholarships', label: 'Scholarships', icon: GraduationCap, color: 'text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800/60' },
+    { id: 'certificates', label: 'Certificates', icon: FileCheck, color: 'text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/60' },
+    { id: 'residence', label: 'Residence Services', icon: Home, color: 'text-emerald-600 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60' },
+    { id: 'schemes', label: 'Govt. Schemes', icon: Coins, color: 'text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60' },
+    { id: 'transport', label: 'Transport Services', icon: Car, color: 'text-purple-600 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800/60' },
+    { id: 'welfare', label: 'Social Welfare', icon: Users, color: 'text-rose-600 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/60' },
   ];
 
   // Filter services for quick search match
@@ -97,14 +97,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search government services (e.g., Scholarship, Income Certificate, Driving License)..."
-                className="w-full text-xs sm:text-sm pl-11 pr-4 py-3.5 rounded-xl bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-brand-500/30 shadow-lg"
+                className="w-full text-xs sm:text-sm pl-11 pr-4 py-3.5 rounded-xl bg-white dark:bg-[#162033] text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 border border-transparent dark:border-slate-700 focus:outline-none focus:ring-4 focus:ring-brand-500/30 shadow-lg"
               />
             </div>
 
             {/* Instant Search Suggestions dropdown */}
             {searchQuery.trim() && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white text-slate-900 rounded-xl shadow-2xl border border-slate-200 overflow-hidden z-20 max-h-72 overflow-y-auto">
-                <div className="p-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-slate-50 border-b border-slate-100">
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#111827] text-slate-900 dark:text-slate-100 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-20 max-h-72 overflow-y-auto">
+                <div className="p-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-[#162033] border-b border-slate-100 dark:border-slate-800">
                   Matching Services ({filteredServices.length})
                 </div>
                 {filteredServices.length > 0 ? (
@@ -115,19 +115,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         setSearchQuery('');
                         onSelectService(service);
                       }}
-                      className="w-full text-left p-3 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0 flex items-center justify-between"
+                      className="w-full text-left p-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors border-b border-slate-100 dark:border-slate-800 last:border-0 flex items-center justify-between"
                     >
                       <div>
-                        <span className="text-xs font-bold text-navy-900 block">{service.title}</span>
-                        <span className="text-[11px] text-slate-500">{service.departmentName}</span>
+                        <span className="text-xs font-bold text-navy-900 dark:text-white block">{service.title}</span>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400">{service.departmentName}</span>
                       </div>
-                      <span className="text-xs font-semibold text-brand-600 bg-brand-50 px-2 py-1 rounded-lg">
+                      <span className="text-xs font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 px-2 py-1 rounded-lg">
                         Apply Now &rarr;
                       </span>
                     </button>
                   ))
                 ) : (
-                  <div className="p-4 text-center text-xs text-slate-500">
+                  <div className="p-4 text-center text-xs text-slate-500 dark:text-slate-400">
                     No matching services found for &quot;{searchQuery}&quot;. Try &quot;Scholarship&quot; or browse categories.
                   </div>
                 )}
@@ -143,12 +143,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {/* Popular / Recommended Service Category Cards */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+          <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wide">
             Explore Government Service Categories
           </h2>
           <button
             onClick={() => onNavigateTab('services')}
-            className="text-xs font-semibold text-brand-600 hover:text-brand-800 flex items-center gap-1"
+            className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 flex items-center gap-1"
           >
             <span>View All Services</span>
             <ChevronRight className="w-3.5 h-3.5" />
@@ -162,15 +162,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <button
                 key={cat.id}
                 onClick={() => onNavigateTab('services')}
-                className="group p-4 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-brand-300 transition-all text-center flex flex-col items-center"
+                className="group p-4 bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-brand-300 dark:hover:border-brand-500/60 transition-all text-center flex flex-col items-center"
               >
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-2.5 transition-transform group-hover:scale-105 border ${cat.color}`}>
                   <Icon className="w-6 h-6" />
                 </div>
-                <span className="text-xs font-bold text-slate-800 group-hover:text-brand-700 leading-snug">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-brand-700 dark:group-hover:text-brand-400 leading-snug">
                   {cat.label}
                 </span>
-                <span className="text-[10px] text-slate-400 mt-0.5">Explore &rarr;</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">Explore &rarr;</span>
               </button>
             );
           })}
@@ -211,19 +211,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span>MY APPLICATIONS</span>
-                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                   {applications.length}
                 </span>
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Services you have actually applied for across connected departments.
               </p>
             </div>
             <button
               onClick={() => onNavigateTab('applications')}
-              className="text-xs font-semibold text-brand-600 hover:text-brand-800 flex items-center gap-1"
+              className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 flex items-center gap-1"
             >
               <span>View all applications</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -236,21 +236,21 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 <div
                   key={app.id}
                   onClick={() => onSelectApplication(app)}
-                  className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-brand-200 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
+                  className="p-4 bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-brand-200 dark:hover:border-slate-700 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
                 >
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-[11px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-100">
+                      <span className="font-mono text-[11px] font-bold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/60 px-2 py-0.5 rounded border border-brand-100 dark:border-brand-800/60">
                         {app.id}
                       </span>
                       <StatusBadge status={app.status} size="sm" />
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900 group-hover:text-brand-700 transition-colors">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-brand-700 dark:group-hover:text-brand-300 transition-colors">
                       {app.serviceName}
                     </h3>
-                    <div className="flex items-center gap-3 text-xs text-slate-500">
+                    <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
                       <span className="flex items-center gap-1">
-                        <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                        <Building2 className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                         {app.departmentName}
                       </span>
                       <span>&bull;</span>
@@ -259,7 +259,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   </div>
 
                   <div className="flex items-center gap-3 self-end sm:self-center">
-                    <button className="px-3 py-1.5 text-xs font-semibold text-navy-800 bg-slate-100 group-hover:bg-brand-50 group-hover:text-brand-700 rounded-lg transition-colors flex items-center gap-1">
+                    <button className="px-3 py-1.5 text-xs font-semibold text-navy-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 group-hover:bg-brand-50 dark:group-hover:bg-slate-700 group-hover:text-brand-700 dark:group-hover:text-brand-300 rounded-lg transition-colors flex items-center gap-1">
                       <span>Track Status</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
@@ -268,8 +268,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               ))}
             </div>
           ) : (
-            <div className="p-8 text-center bg-white rounded-xl border border-slate-200">
-              <p className="text-xs text-slate-500">You have not applied for any services yet.</p>
+            <div className="p-8 text-center bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800">
+              <p className="text-xs text-slate-500 dark:text-slate-400">You have not applied for any services yet.</p>
               <button
                 onClick={() => onNavigateTab('services')}
                 className="mt-3 px-4 py-2 bg-brand-600 text-white rounded-lg text-xs font-semibold hover:bg-brand-700"
@@ -320,14 +320,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
 
           {/* RECENT ACTIVITY Feed */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+          <div className="bg-white dark:bg-[#111827] rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                 Recent Activity
               </h3>
               <button
                 onClick={() => onNavigateTab('activity')}
-                className="text-xs font-semibold text-brand-600 hover:text-brand-800"
+                className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300"
               >
                 View All &rarr;
               </button>
@@ -335,11 +335,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
             <div className="space-y-3">
               {activities.slice(0, 4).map((act) => (
-                <div key={act.id} className="text-xs flex items-start gap-2.5 pb-2 border-b border-slate-100 last:border-0">
+                <div key={act.id} className="text-xs flex items-start gap-2.5 pb-2 border-b border-slate-100 dark:border-slate-800/80 last:border-0">
                   <span className="w-2 h-2 rounded-full bg-brand-500 mt-1.5 shrink-0" />
                   <div className="flex-1">
-                    <div className="font-semibold text-slate-800 leading-snug">{act.action}</div>
-                    <div className="text-[11px] text-slate-500 mt-0.5 flex items-center justify-between">
+                    <div className="font-semibold text-slate-800 dark:text-slate-200 leading-snug">{act.action}</div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center justify-between">
                       <span>{act.departmentName}</span>
                       <span className="font-mono">{act.timestamp}</span>
                     </div>

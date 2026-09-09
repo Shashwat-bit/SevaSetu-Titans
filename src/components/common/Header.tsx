@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Citizen } from '../../types';
-import { Shield, Layers, Globe, User, CheckCircle2, AlertCircle, RefreshCw, KeyRound, Building2 } from 'lucide-react';
+import { Shield, Layers, Globe, User, CheckCircle2, AlertCircle, RefreshCw, KeyRound, Building2, Sun, Moon } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 interface HeaderProps {
   citizen: Citizen;
@@ -15,6 +16,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenOnboarding,
   onOpenAuthModal,
 }) => {
+  const { toggleTheme, isDark } = useTheme();
   const [currentLang, setCurrentLang] = useState<'EN' | 'HI' | 'GU'>('EN');
 
   const getRoleBadge = () => {
@@ -49,7 +51,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm">
+    <header className="sticky top-0 z-40 bg-white dark:bg-[#111827] border-b border-slate-200 dark:border-slate-800 shadow-sm transition-colors duration-200">
       {/* Interoperability Architecture Notice Bar */}
       <div className="bg-slate-900 text-slate-200 text-xs px-4 py-1.5 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800">
         <div className="flex items-center gap-2">
@@ -80,14 +82,14 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xl font-extrabold tracking-tight text-navy-900">
+                <span className="text-xl font-extrabold tracking-tight text-navy-900 dark:text-white">
                   Seva<span className="text-brand-600">Setu</span>
                 </span>
-                <span className="hidden md:inline-block px-2 py-0.5 text-[10px] font-semibold bg-blue-50 text-blue-700 rounded-full border border-blue-200">
+                <span className="hidden md:inline-block px-2 py-0.5 text-[10px] font-semibold bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 rounded-full border border-blue-200 dark:border-blue-800/50">
                   Interoperability Hub
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 font-medium hidden sm:block">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium hidden sm:block">
                 Unified Citizen Services &bull; Privacy-First Consent
               </p>
             </div>
@@ -97,10 +99,10 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={onOpenHowItWorks}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-navy-50 text-navy-800 hover:bg-navy-100 border border-navy-200 transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-navy-50 dark:bg-slate-800 text-navy-800 dark:text-slate-200 hover:bg-navy-100 dark:hover:bg-slate-700 border border-navy-200 dark:border-slate-700 transition-colors shadow-sm"
               title="View Interoperability Architecture"
             >
-              <Layers className="w-3.5 h-3.5 text-brand-600" />
+              <Layers className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" />
               <span>How SevaSetu Works</span>
             </button>
 
@@ -108,32 +110,46 @@ export const Header: React.FC<HeaderProps> = ({
             {onOpenAuthModal && (
               <button
                 onClick={onOpenAuthModal}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-300 transition-all shadow-sm"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 border border-amber-300 dark:border-amber-700/60 transition-all shadow-sm"
                 title="Switch between Citizen and Department Officer personas"
               >
-                <RefreshCw className="w-3.5 h-3.5 text-amber-600" />
+                <RefreshCw className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                 <span className="hidden sm:inline">Switch Persona</span>
                 <span className="sm:hidden">Persona</span>
               </button>
             )}
+
+            {/* Dark Mode Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="inline-flex items-center justify-center p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors shadow-sm"
+              title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {isDark ? (
+                <Sun className="w-4 h-4 text-amber-400 transition-transform" />
+              ) : (
+                <Moon className="w-4 h-4 text-slate-600 transition-transform" />
+              )}
+            </button>
 
             {/* DigiLocker Mock Adapter Status (Citizen only) */}
             {citizen.role !== 'officer' && (
               citizen.isDigiLockerConnected ? (
                 <div
                   onClick={onOpenOnboarding}
-                  className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-medium cursor-pointer hover:bg-emerald-100 transition-colors"
+                  className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 text-xs font-medium cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
                   title="DigiLocker Mock Adapter is connected with verified credentials"
                 >
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   <span>DigiLocker Linked</span>
                 </div>
               ) : (
                 <button
                   onClick={onOpenOnboarding}
-                  className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-300 text-xs font-medium hover:bg-amber-100 transition-colors"
+                  className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 text-xs font-medium hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
                 >
-                  <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                   <span>Connect DigiLocker</span>
                 </button>
               )
@@ -142,18 +158,18 @@ export const Header: React.FC<HeaderProps> = ({
             {/* User Profile Pill & Role Indicator */}
             <div
               onClick={onOpenAuthModal}
-              className="flex items-center gap-2 pl-2 border-l border-slate-200 cursor-pointer hover:opacity-90 transition-opacity"
+              className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-700 cursor-pointer hover:opacity-90 transition-opacity"
               title="Click to switch persona or view auth details"
             >
-              <div className="w-8 h-8 rounded-full bg-navy-100 border border-navy-200 flex items-center justify-center text-navy-800 font-semibold text-xs">
+              <div className="w-8 h-8 rounded-full bg-navy-100 dark:bg-slate-800 border border-navy-200 dark:border-slate-700 flex items-center justify-center text-navy-800 dark:text-slate-200 font-semibold text-xs">
                 {citizen.name.charAt(0)}
               </div>
               <div className="hidden sm:block text-left">
-                <div className="text-xs font-bold text-slate-800 leading-tight flex items-center gap-1.5">
+                <div className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight flex items-center gap-1.5">
                   <span className="truncate max-w-[120px]">{citizen.name}</span>
                   {getRoleBadge()}
                 </div>
-                <div className="text-[10px] text-slate-500 font-mono">
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
                   {citizen.role === 'officer' ? citizen.email : citizen.maskedAadhaar || citizen.email}
                 </div>
               </div>

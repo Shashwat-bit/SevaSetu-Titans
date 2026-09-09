@@ -29,8 +29,9 @@ import { AuthModal } from './components/common/AuthModal';
 import { OfficerDashboardPage } from './pages/officer/OfficerDashboardPage';
 import { OfficerApplicationsPage } from './pages/officer/OfficerApplicationsPage';
 import { OfficerApplicationDetailPage } from './pages/officer/OfficerApplicationDetailPage';
+import { ThemeProvider } from './context/ThemeContext';
 
-export const App: React.FC = () => {
+export const AppContent: React.FC = () => {
   // Store States
   const [citizen, setCitizen] = useState<Citizen>(() => adapterStore.getCitizen());
   const [applications, setApplications] = useState<Application[]>(() => adapterStore.getApplications());
@@ -109,7 +110,7 @@ export const App: React.FC = () => {
   const isOfficer = citizen.role === 'officer';
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#0B1120] text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200">
       {/* Header with Platform Notice */}
       <Header
         citizen={citizen}
@@ -304,6 +305,14 @@ export const App: React.FC = () => {
         }}
       />
     </div>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 };
 
