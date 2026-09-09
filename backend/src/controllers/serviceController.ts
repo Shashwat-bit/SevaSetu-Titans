@@ -19,3 +19,17 @@ export async function getServiceById(req: Request, res: Response, next: NextFunc
     next(error);
   }
 }
+
+export async function getServiceRequirements(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { interoperabilityService } = await import('../services/interoperabilityService');
+    const requirements = await interoperabilityService.getServiceRequirements(req.params.id);
+    res.status(200).json({
+      success: true,
+      data: requirements,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+

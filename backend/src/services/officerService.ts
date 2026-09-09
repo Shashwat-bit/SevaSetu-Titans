@@ -32,7 +32,7 @@ export interface GetOfficerApplicationsQuery {
 
 const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
   'Draft': ['Submitted'],
-  'Submitted': ['Under Verification', 'Rejected'],
+  'Submitted': ['Documents Received', 'Under Verification', 'Rejected'],
   'Documents Received': ['Under Verification', 'Rejected'],
   'Under Verification': ['Under Review', 'Rejected'],
   'Under Review': ['Approved', 'Rejected'],

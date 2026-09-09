@@ -8,3 +8,4 @@ export * from './consentsApi';
 export * from './activitiesApi';
 export * from './usersApi';
 export * from './officerApi';
+export * from './interopApi';

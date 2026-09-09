@@ -57,6 +57,8 @@ export interface IApplication extends Document {
   officerRemarks: IOfficerRemark[];
   assignedOfficerId?: string;
   assignedOfficerName?: string;
+  departmentReferenceId?: string; // Simulated Department Reference Ack ID (e.g. "EDU-MOCK-2026-00123")
+  consentId?: string; // Associated citizen consent ID
   createdAt: Date;
   updatedAt: Date;
 }
@@ -130,6 +132,8 @@ const ApplicationSchema = new Schema<IApplication>(
     officerRemarks: { type: [OfficerRemarkSchema], default: [] },
     assignedOfficerId: { type: String },
     assignedOfficerName: { type: String },
+    departmentReferenceId: { type: String, index: true },
+    consentId: { type: String, index: true },
   },
   { timestamps: true }
 );

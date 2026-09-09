@@ -58,6 +58,12 @@ async function run() {
     }
   }
 
+  // Deterministic test isolation: reset seed state to ensure clean test environment
+  await request('/seed', {
+    method: 'POST',
+    headers: { 'x-dev-seed-key': 'sevasetu-dev-seed-bypass' },
+  });
+
   // 1. Citizen Login
   const loginCitizen = await request('/auth/login', {
     method: 'POST',

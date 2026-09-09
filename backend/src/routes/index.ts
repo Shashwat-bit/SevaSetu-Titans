@@ -10,11 +10,13 @@ import activityRoutes from './activityRoutes';
 import seedRoutes from './seedRoutes';
 import authRoutes from './authRoutes';
 import officerRoutes from './officerRoutes';
+import interoperabilityRoutes from './interoperabilityRoutes';
 
 const apiRouter = Router();
 
 apiRouter.use('/auth', authRoutes);
 apiRouter.use('/officer', officerRoutes);
+apiRouter.use('/interop', interoperabilityRoutes);
 apiRouter.use('/health', healthRoutes);
 apiRouter.use('/users', userRoutes);
 apiRouter.use('/departments', departmentRoutes);

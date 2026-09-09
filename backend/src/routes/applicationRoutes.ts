@@ -5,6 +5,11 @@ import {
   submitApplication,
   advanceApplicationStatus,
   getApplicationTimeline,
+  getApplicationRequirements,
+  getApplicationDocuments,
+  requestApplicationDocumentExchange,
+  fetchApplicationDocument,
+  getApplicationExchanges,
 } from '../controllers/applicationController';
 import { authenticate, requireRole } from '../middleware/authMiddleware';
 
@@ -18,6 +23,13 @@ router.get('/', getApplications);
 
 // Citizen only can submit applications
 router.post('/', requireRole('citizen'), submitApplication);
+
+// Part 5 Document and Requirements routes
+router.get('/:id/requirements', getApplicationRequirements);
+router.get('/:id/documents', getApplicationDocuments);
+router.post('/:id/documents/request', requestApplicationDocumentExchange);
+router.post('/:id/documents/:documentId/fetch', fetchApplicationDocument);
+router.get('/:id/exchanges', getApplicationExchanges);
 
 // Application details (ownership or department scope enforced in controller)
 router.get('/:id', getApplicationById);

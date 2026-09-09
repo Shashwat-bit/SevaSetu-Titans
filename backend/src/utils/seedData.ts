@@ -7,6 +7,7 @@ import { Application } from '../models/Application';
 import { CitizenDocument } from '../models/Document';
 import { Consent } from '../models/Consent';
 import { Activity } from '../models/Activity';
+import { DataExchange } from '../models/DataExchange';
 import { connectDB } from '../config/db';
 import { logger } from './logger';
 
@@ -275,6 +276,71 @@ export const SEED_DOCUMENTS = [
     source: 'MOCK_DIGILOCKER',
     verificationStatus: 'VERIFIED_MOCK',
   },
+  {
+    documentId: 'doc-pan',
+    citizenId: 'cit-001',
+    name: 'Permanent Account Number (PAN) Card',
+    docType: 'Tax Identity',
+    issuer: 'Income Tax Department (Govt. of India)',
+    issueDate: '05 Mar 2022',
+    docNumber: 'ABCDE1234F',
+    verified: true,
+    category: 'identity' as const,
+    source: 'MOCK_DIGILOCKER',
+    verificationStatus: 'VERIFIED_MOCK',
+  },
+  {
+    documentId: 'doc-cbse-10',
+    citizenId: 'cit-001',
+    name: 'Class X Secondary School Marksheet',
+    docType: 'Marksheet',
+    issuer: 'Central Board of Secondary Education (CBSE)',
+    issueDate: '15 Jul 2021',
+    docNumber: 'CBSE/2021/654321',
+    verified: true,
+    category: 'education' as const,
+    source: 'MOCK_DIGILOCKER',
+    verificationStatus: 'VERIFIED_MOCK',
+  },
+  {
+    documentId: 'doc-domicile',
+    citizenId: 'cit-001',
+    name: 'Residence & Domicile Certificate',
+    docType: 'Residence Proof',
+    issuer: 'Revenue Department (Tehsil Office, Gandhinagar)',
+    issueDate: '18 Nov 2022',
+    docNumber: 'DOM-GUJ-2022-99881',
+    verified: true,
+    category: 'address' as const,
+    source: 'MOCK_DIGILOCKER',
+    verificationStatus: 'VERIFIED_MOCK',
+  },
+  {
+    documentId: 'doc-caste',
+    citizenId: 'cit-001',
+    name: 'Social Category / Caste Certificate',
+    docType: 'Community Certificate',
+    issuer: 'District Social Welfare Officer',
+    issueDate: '22 Feb 2021',
+    docNumber: 'SC-ST-OBC-7729',
+    verified: true,
+    category: 'identity' as const,
+    source: 'MOCK_DIGILOCKER',
+    verificationStatus: 'VERIFIED_MOCK',
+  },
+  {
+    documentId: 'doc-bank-proof',
+    citizenId: 'cit-001',
+    name: 'Bank Account Passbook / IFSC Verification',
+    docType: 'Bank Account Proof',
+    issuer: 'State Bank of India (Public Sector Bank)',
+    issueDate: '01 Jan 2025',
+    docNumber: 'SBI-ACC-99881122',
+    verified: true,
+    category: 'income' as const,
+    source: 'MOCK_DIGILOCKER',
+    verificationStatus: 'VERIFIED_MOCK',
+  },
 ];
 
 export const SEED_APPLICATIONS = [
@@ -288,6 +354,8 @@ export const SEED_APPLICATIONS = [
     citizenName: 'Tanishka',
     status: 'Under Verification',
     submittedAt: '08 Sep 2026, 10:42 AM',
+    departmentReferenceId: 'EDU-MOCK-2026-88123',
+    consentId: 'perm-edu-001',
     prefilledFields: {
       'Full Name': { value: 'Tanishka', source: 'DigiLocker Mock (UIDAI)', verified: true },
       'Date of Birth': { value: '14/05/2002', source: 'DigiLocker Mock (UIDAI)', verified: true },
@@ -390,6 +458,8 @@ export const SEED_APPLICATIONS = [
     citizenName: 'Tanishka',
     status: 'Approved',
     submittedAt: '24 Aug 2026, 02:15 PM',
+    departmentReferenceId: 'REV-MOCK-2026-11942',
+    consentId: 'perm-rev-001',
     prefilledFields: {
       'Full Name': { value: 'Tanishka', source: 'DigiLocker Mock (UIDAI)', verified: true },
       'Permanent Address': { value: 'Flat 402, Sector 14, Gandhinagar, Gujarat - 382016', source: 'DigiLocker Mock (UIDAI)', verified: true },
@@ -432,6 +502,8 @@ export const SEED_APPLICATIONS = [
     citizenName: 'Tanishka',
     status: 'Submitted',
     submittedAt: '06 Sep 2026, 09:30 AM',
+    departmentReferenceId: 'REV-MOCK-2026-33912',
+    consentId: 'perm-rev-002',
     prefilledFields: {
       'Full Name': { value: 'Tanishka', source: 'DigiLocker Mock (UIDAI)', verified: true },
       'Permanent Address': { value: 'Flat 402, Sector 14, Gandhinagar, Gujarat - 382016', source: 'DigiLocker Mock (UIDAI)', verified: true },
@@ -571,6 +643,63 @@ export const SEED_ACTIVITIES = [
   },
 ];
 
+export const SEED_DATA_EXCHANGES = [
+  {
+    exchangeId: 'xchg-001',
+    applicationId: 'SS-2026-001024',
+    citizenId: 'cit-001',
+    documentId: 'doc-cbse-12',
+    documentType: 'Marksheet',
+    normalizedType: 'EDUCATION_MARKSHEET',
+    sourceSystem: 'DigiLocker Mock Adapter (Demo)',
+    targetDepartment: 'dept-edu',
+    purpose: 'Scholarship eligibility and academic transcript verification',
+    consentId: 'perm-edu-001',
+    requestedAt: '08 Sep 2026, 10:42 AM',
+    accessedAt: '08 Sep 2026, 10:43 AM',
+    status: 'FETCHED' as const,
+    requestedBy: 'cit-001',
+    requestedByName: 'Tanishka',
+    metadata: { maskedReference: 'CBSE/2023/XXXXXX' },
+  },
+  {
+    exchangeId: 'xchg-002',
+    applicationId: 'SS-2026-001024',
+    citizenId: 'cit-001',
+    documentId: 'doc-aadhaar',
+    documentType: 'Identity Document',
+    normalizedType: 'IDENTITY_AADHAAR',
+    sourceSystem: 'DigiLocker Mock Adapter (Demo)',
+    targetDepartment: 'dept-edu',
+    purpose: 'Applicant e-KYC and identity verification',
+    consentId: 'perm-edu-001',
+    requestedAt: '08 Sep 2026, 10:42 AM',
+    accessedAt: '08 Sep 2026, 10:43 AM',
+    status: 'FETCHED' as const,
+    requestedBy: 'cit-001',
+    requestedByName: 'Tanishka',
+    metadata: { maskedReference: 'XXXX-XXXX-4921' },
+  },
+  {
+    exchangeId: 'xchg-003',
+    applicationId: 'SS-2026-000915',
+    citizenId: 'cit-001',
+    documentId: 'doc-elec',
+    documentType: 'Address Information',
+    normalizedType: 'ADDRESS_PROOF_UTILITY',
+    sourceSystem: 'DigiLocker Mock Adapter (Demo)',
+    targetDepartment: 'dept-rev',
+    purpose: 'Continuous residence and address utility check',
+    consentId: 'perm-rev-002',
+    requestedAt: '06 Sep 2026, 09:30 AM',
+    accessedAt: '06 Sep 2026, 09:31 AM',
+    status: 'FETCHED' as const,
+    requestedBy: 'cit-001',
+    requestedByName: 'Tanishka',
+    metadata: { maskedReference: 'EB-XXXX-8841' },
+  },
+];
+
 export async function seedDatabase(): Promise<{ success: boolean; message: string }> {
   try {
     logger.info('Starting database seeding...');
@@ -583,6 +712,7 @@ export async function seedDatabase(): Promise<{ success: boolean; message: strin
     await Application.deleteMany({});
     await Consent.deleteMany({});
     await Activity.deleteMany({});
+    await DataExchange.deleteMany({});
 
     // Seed Demo Users (Citizen, Officers, Admin)
     const createdUsers = await User.insertMany(SEED_USERS);
@@ -624,6 +754,9 @@ export async function seedDatabase(): Promise<{ success: boolean; message: strin
 
     // Seed Activities
     await Activity.insertMany(SEED_ACTIVITIES);
+
+    // Seed Data Exchanges
+    await DataExchange.insertMany(SEED_DATA_EXCHANGES);
 
     logger.info('Database seeded successfully with pristine demo dataset.');
     return { success: true, message: 'Database seeded successfully with demo records.' };

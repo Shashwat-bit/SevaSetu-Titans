@@ -102,6 +102,8 @@ export interface Application {
   officerRemarks?: OfficerRemark[];
   assignedOfficerId?: string;
   assignedOfficerName?: string;
+  departmentReferenceId?: string; // Simulated Department Reference Ack ID (e.g. "EDU-MOCK-2026-00123")
+  consentId?: string; // Associated citizen consent ID
 }
 
 export interface OfficerDashboardStats {
@@ -150,7 +152,13 @@ export interface AuditActivity {
     | 'consent_grant'
     | 'consent_revoke'
     | 'status_change'
-    | 'officer_remark';
+    | 'officer_remark'
+    | 'document_requested'
+    | 'document_fetched'
+    | 'document_exchanged'
+    | 'data_access_denied'
+    | 'adapter_request'
+    | 'adapter_response';
   statusBadge: string;
 }
 
@@ -163,4 +171,52 @@ export interface DigiLockerMockDocument {
   docNumber: string;
   verified: boolean;
   category: 'identity' | 'education' | 'income' | 'address' | 'transport';
+  normalizedType?: string;
+  maskedReferenceNumber?: string;
+  available?: boolean;
+}
+
+export interface DataExchange {
+  id?: string;
+  exchangeId: string;
+  applicationId: string;
+  citizenId: string;
+  documentId: string;
+  documentType: string;
+  normalizedType: string;
+  sourceSystem: string;
+  targetDepartment: string;
+  purpose: string;
+  consentId?: string;
+  requestedAt: string;
+  accessedAt?: string;
+  status: 'REQUESTED' | 'AUTHORIZED' | 'FETCHED' | 'VERIFIED' | 'DENIED' | 'FAILED';
+  requestedBy: string;
+  requestedByName: string;
+  metadata?: Record<string, any>;
+}
+
+export interface SimulatedAdapterHealth {
+  id: string;
+  name: string;
+  type: 'DOCUMENT_SOURCE' | 'DEPARTMENT_SYSTEM';
+  status: 'CONNECTED' | 'AVAILABLE' | 'DEGRADED' | 'DISCONNECTED';
+  protocol: string;
+  latencyMs: number;
+  lastPing: string;
+  isMock: true;
+  label: string;
+}
+
+export interface ServiceRequirements {
+  serviceId: string;
+  serviceTitle: string;
+  departmentId: string;
+  departmentName: string;
+  category?: string;
+  processingDays?: string;
+  fee?: string;
+  requiredDocuments: string[];
+  requiredFields: string[];
+  normalizedRequiredTypes: string[];
 }

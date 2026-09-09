@@ -3,7 +3,9 @@ import { Service } from '../models/Service';
 import { User } from '../models/User';
 import { Consent } from '../models/Consent';
 import { Activity } from '../models/Activity';
+import { DataExchange } from '../models/DataExchange';
 import { getDepartmentAdapter } from '../adapters/adapterFactory';
+import { normalizationService } from './normalizationService';
 import { AppError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
 import { AuthTokenPayload } from '../middleware/authMiddleware';
@@ -132,24 +134,8 @@ export class ApplicationService {
       },
     ];
 
-    // 3. Save Application in MongoDB
-    const newApplication = await Application.create({
-      applicationId: newId,
-      citizenId,
-      citizenName,
-      serviceId: service.serviceId,
-      serviceName: service.title,
-      departmentId: service.departmentId,
-      departmentName: service.departmentName,
-      status: 'Submitted',
-      submittedAt: formattedNow,
-      prefilledFields: dto.prefilledFields || {},
-      userFields: dto.userFields || {},
-      documentsAttached: dto.attachedDocs || [],
-      timeline,
-    });
-
-    // 4. Create Granular Consent Record
+    // 3. Create Granular Consent Record first so ID is linked
+    const consentId = `perm-${Date.now()}`;
     const validUntilDate = new Date();
     validUntilDate.setMonth(validUntilDate.getMonth() + 6);
     const formattedUntil = validUntilDate.toLocaleDateString('en-GB', {
@@ -164,7 +150,7 @@ export class ApplicationService {
     });
 
     await Consent.create({
-      consentId: `perm-${Date.now()}`,
+      consentId,
       citizenId,
       departmentId: service.departmentId,
       whoHasAccess: `${service.departmentName}, Govt. of India`,
@@ -177,7 +163,56 @@ export class ApplicationService {
       status: 'Active',
     });
 
-    // 5. Automatically create Activity Audit Logs
+    // 4. Save Application in MongoDB with departmentReferenceId and consentId
+    const deptRefId = dispatchResult.departmentReferenceId || dispatchResult.departmentAckId;
+    const newApplication = await Application.create({
+      applicationId: newId,
+      citizenId,
+      citizenName,
+      serviceId: service.serviceId,
+      serviceName: service.title,
+      departmentId: service.departmentId,
+      departmentName: service.departmentName,
+      status: 'Submitted',
+      submittedAt: formattedNow,
+      prefilledFields: dto.prefilledFields || {},
+      userFields: dto.userFields || {},
+      documentsAttached: dto.attachedDocs || [],
+      timeline,
+      departmentReferenceId: deptRefId,
+      consentId,
+    });
+
+    // 5. Record initial DataExchange entries for each attached document
+    if (dto.attachedDocs && dto.attachedDocs.length > 0) {
+      for (let i = 0; i < dto.attachedDocs.length; i++) {
+        const doc = dto.attachedDocs[i];
+        const normType = normalizationService.normalizeDocumentType(doc.name || doc.docType);
+        await DataExchange.create({
+          exchangeId: `xchg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${i}`,
+          applicationId: newId,
+          citizenId,
+          documentId: doc.docId || `doc-${Date.now()}-${i}`,
+          documentType: doc.docType,
+          normalizedType: normType,
+          sourceSystem: doc.source || 'DigiLocker Mock Adapter (Demo)',
+          targetDepartment: service.departmentId,
+          purpose: `${service.title} application verification`,
+          consentId,
+          requestedAt: formattedNow,
+          accessedAt: formattedNow,
+          status: 'FETCHED',
+          requestedBy: citizenId,
+          requestedByName: citizenName,
+          metadata: {
+            serviceId: service.serviceId,
+            verified: doc.verified,
+          },
+        });
+      }
+    }
+
+    // 6. Automatically create Activity Audit Logs
     await Activity.create({
       activityId: `act-${Date.now()}-1`,
       citizenId,
@@ -185,10 +220,15 @@ export class ApplicationService {
       serviceName: service.title,
       departmentName: service.departmentName,
       action: `Application submitted - ${newId}`,
-      details: `Dispatched via SevaSetu Interoperability Layer to ${service.departmentName} (Ack: ${dispatchResult.departmentAckId})`,
+      details: `Dispatched via SevaSetu Interoperability Layer to ${service.departmentName} (Ack: ${dispatchResult.departmentAckId}, Dept Ref: ${deptRefId})`,
       type: 'submission',
       statusBadge: 'Submitted',
       timestamp: formattedNow,
+      metadata: {
+        departmentAckId: dispatchResult.departmentAckId,
+        departmentReferenceId: deptRefId,
+        consentId,
+      },
     });
 
     await Activity.create({
@@ -202,6 +242,23 @@ export class ApplicationService {
       type: 'consent_grant',
       statusBadge: 'Consent Granted',
       timestamp: formattedNow,
+    });
+
+    await Activity.create({
+      activityId: `act-${Date.now()}-3`,
+      citizenId,
+      applicationId: newId,
+      serviceName: service.title,
+      departmentName: service.departmentName,
+      action: `Department Adapter Dispatched (Mock)`,
+      details: `Payload ingested into ${departmentAdapter.departmentName}. Reference ID: ${deptRefId}`,
+      type: 'adapter_response',
+      statusBadge: 'Acknowledged',
+      timestamp: formattedNow,
+      metadata: {
+        departmentCode: departmentAdapter.departmentCode,
+        departmentReferenceId: deptRefId,
+      },
     });
 
     return newApplication;
@@ -282,6 +339,38 @@ export class ApplicationService {
   async getTimeline(applicationId: string, user: AuthTokenPayload): Promise<ITimelineEvent[]> {
     const app = await this.getApplicationByIdWithAccess(applicationId, user);
     return app.timeline;
+  }
+
+  async getApplicationRequirements(applicationId: string, user: AuthTokenPayload) {
+    const app = await this.getApplicationByIdWithAccess(applicationId, user);
+    const service = await Service.findOne({ serviceId: app.serviceId });
+    const deptAdapter = getDepartmentAdapter(app.departmentId);
+    let requiredDocs = service?.requiredDocs || [];
+    let requiredFields = service?.requiredFields || [];
+
+    try {
+      const adapterData = await deptAdapter.getServiceData(app.serviceId);
+      if (adapterData.requiredDocuments?.length) requiredDocs = adapterData.requiredDocuments;
+      if (adapterData.requiredFields?.length) requiredFields = adapterData.requiredFields;
+    } catch {
+      // Fallback to service catalog
+    }
+
+    return {
+      applicationId: app.applicationId,
+      serviceId: app.serviceId,
+      serviceName: app.serviceName,
+      departmentId: app.departmentId,
+      departmentName: app.departmentName,
+      requiredDocuments: requiredDocs,
+      requiredFields,
+      normalizedRequiredTypes: requiredDocs.map((d) => normalizationService.normalizeDocumentType(d)),
+    };
+  }
+
+  async getApplicationDocuments(applicationId: string, user: AuthTokenPayload): Promise<IAttachedDocument[]> {
+    const app = await this.getApplicationByIdWithAccess(applicationId, user);
+    return app.documentsAttached || [];
   }
 }
 

@@ -23,3 +23,12 @@ export function getDepartmentAdapter(departmentId: string): IDepartmentAdapter {
 export function getDocumentSourceAdapter(_source?: string): IDocumentSourceAdapter {
   return new MockDigiLockerAdapter();
 }
+
+export function getAllDepartmentAdapters(): { departmentId: string; adapter: IDepartmentAdapter }[] {
+  return [
+    { departmentId: 'dept-edu', adapter: new MockEducationAdapter() },
+    { departmentId: 'dept-rev', adapter: new MockRevenueAdapter() },
+    { departmentId: 'dept-trans', adapter: new MockTransportAdapter() },
+    { departmentId: 'dept-welfare', adapter: new MockSocialWelfareAdapter() },
+  ];
+}

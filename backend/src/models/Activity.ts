@@ -15,7 +15,13 @@ export interface IActivity extends Document {
     | 'consent_grant'
     | 'consent_revoke'
     | 'status_change'
-    | 'officer_remark';
+    | 'officer_remark'
+    | 'document_requested'
+    | 'document_fetched'
+    | 'document_exchanged'
+    | 'data_access_denied'
+    | 'adapter_request'
+    | 'adapter_response';
   statusBadge: string;
   timestamp: string;
   metadata?: Record<string, any>;
@@ -42,6 +48,12 @@ const ActivitySchema = new Schema<IActivity>(
         'consent_revoke',
         'status_change',
         'officer_remark',
+        'document_requested',
+        'document_fetched',
+        'document_exchanged',
+        'data_access_denied',
+        'adapter_request',
+        'adapter_response',
       ],
       required: true,
       index: true,
