@@ -84,9 +84,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       color: 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60',
       badgeColor: 'bg-purple-100 dark:bg-purple-900/60 text-purple-800 dark:text-purple-200',
     },
+    {
+      id: 'admin' as const,
+      roleName: 'System Administrator',
+      name: 'System Administrator',
+      role: 'admin',
+      desc: 'Central governance, live platform telemetry, department performance, and system audit logs.',
+      deptCode: 'Central Node (ADMIN)',
+      icon: Shield,
+      color: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60',
+      badgeColor: 'bg-indigo-100 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200',
+    },
   ];
 
-  const handleSelectPersona = async (personaId: 'citizen' | 'officer-edu' | 'officer-rev' | 'officer-trans') => {
+  const handleSelectPersona = async (personaId: 'citizen' | 'officer-edu' | 'officer-rev' | 'officer-trans' | 'admin') => {
     setErrorMsg(null);
     setLoadingPersona(personaId);
     try {
@@ -255,7 +266,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="e.g. tanishka@example.com or officer.edu@gov.in"
+                  placeholder="e.g. tanishka@example.com, officer.edu@gov.in, or admin@sevasetu.gov.in"
                   className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#162033] text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
               </div>
@@ -282,6 +293,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <span>Edu Officer: Officer@Edu123</span>
                   <span>Rev Officer: Officer@Rev123</span>
                   <span>Transport: Officer@Trans123</span>
+                  <span>Admin: Admin@SevaSetu123</span>
                 </div>
               </div>
 

@@ -25,9 +25,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeConsentCount,
   userRole = 'citizen',
 }) => {
+  const isAdmin = userRole === 'admin';
   const isOfficer = userRole === 'officer';
 
-  const navItems = isOfficer
+  const navItems = isAdmin
+    ? [
+        { id: 'dashboard' as NavTab, label: 'Admin Dashboard', icon: LayoutDashboard },
+        { id: 'activity' as NavTab, label: 'System Audit', icon: Activity },
+        { id: 'profile' as NavTab, label: 'Admin Profile', icon: User },
+      ]
+    : isOfficer
     ? [
         { id: 'dashboard' as NavTab, label: 'Officer Dashboard', icon: LayoutDashboard },
         {

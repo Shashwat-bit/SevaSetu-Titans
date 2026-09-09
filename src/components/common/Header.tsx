@@ -9,6 +9,7 @@ interface HeaderProps {
   onOpenHowItWorks: () => void;
   onOpenOnboarding: () => void;
   onOpenAuthModal?: () => void;
+  onNavigateToApplication?: (appId: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -16,6 +17,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenHowItWorks,
   onOpenOnboarding,
   onOpenAuthModal,
+  onNavigateToApplication,
 }) => {
   const { toggleTheme, isDark } = useTheme();
   const [currentLang, setCurrentLang] = useState<'EN' | 'HI' | 'GU'>('EN');
@@ -31,7 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
           ? 'Transport'
           : 'Officer';
       return (
-        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1">
           <Building2 className="w-3 h-3" />
           Officer ({deptName})
         </span>
@@ -39,13 +41,13 @@ export const Header: React.FC<HeaderProps> = ({
     }
     if (citizen.role === 'admin') {
       return (
-        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-300">
+        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-800">
           Admin
         </span>
       );
     }
     return (
-      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300">
+      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-800">
         Citizen
       </span>
     );
@@ -135,10 +137,10 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             {/* Notification Bell */}
-            <NotificationBell />
+            <NotificationBell onNavigateToApplication={onNavigateToApplication} />
 
             {/* DigiLocker Mock Adapter Status (Citizen only) */}
-            {citizen.role !== 'officer' && (
+            {citizen.role === 'citizen' && (
               citizen.isDigiLockerConnected ? (
                 <div
                   onClick={onOpenOnboarding}

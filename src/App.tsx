@@ -29,6 +29,7 @@ import { AuthModal } from './components/common/AuthModal';
 import { OfficerDashboardPage } from './pages/officer/OfficerDashboardPage';
 import { OfficerApplicationsPage } from './pages/officer/OfficerApplicationsPage';
 import { OfficerApplicationDetailPage } from './pages/officer/OfficerApplicationDetailPage';
+import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { ThemeProvider } from './context/ThemeContext';
 
 export const AppContent: React.FC = () => {
@@ -107,7 +108,18 @@ export const AppContent: React.FC = () => {
     (a) => a.status === 'Submitted' || a.status === 'Under Verification' || a.status === 'Under Review'
   ).length;
 
+  const isAdmin = citizen.role === 'admin';
   const isOfficer = citizen.role === 'officer';
+
+  const handleNotificationNavigate = (appId: string) => {
+    if (isOfficer) {
+      setOfficerSelectedAppId(appId);
+      setActiveTab('applications');
+    } else if (!isAdmin) {
+      setSelectedAppIdForTracking(appId);
+      setActiveTab('applications');
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#0B1120] text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200">
@@ -117,6 +129,7 @@ export const AppContent: React.FC = () => {
         onOpenHowItWorks={() => setIsHowItWorksOpen(true)}
         onOpenOnboarding={() => setIsOnboardingOpen(true)}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onNavigateToApplication={handleNotificationNavigate}
       />
 
       {/* Main Navigation with Role Awareness */}
@@ -134,7 +147,41 @@ export const AppContent: React.FC = () => {
 
       {/* Main Page Content Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {isOfficer ? (
+        {isAdmin ? (
+          /* =================================================== */
+          /* ADMIN WORKSPACE PORTAL                              */
+          /* =================================================== */
+          <>
+            {activeTab === 'dashboard' && (
+              <AdminDashboardPage
+                adminUser={citizen}
+                onNavigateTab={(tab) => {
+                  if (tab === 'activities') {
+                    setActiveTab('activity');
+                  }
+                }}
+              />
+            )}
+
+            {activeTab === 'activity' && (
+              <ActivityPage activities={activities} />
+            )}
+
+            {activeTab === 'profile' && (
+              <ProfilePage
+                citizen={citizen}
+                digiLockerDocs={digiLockerDocs}
+                onOpenOnboarding={() => setIsOnboardingOpen(true)}
+                onResetDemo={handleResetDemo}
+                onOpenAuthModal={() => setIsAuthModalOpen(true)}
+                onLogout={() => {
+                  adapterStore.logout();
+                  setIsAuthModalOpen(true);
+                }}
+              />
+            )}
+          </>
+        ) : isOfficer ? (
           /* =================================================== */
           /* OFFICER WORKSPACE PORTAL                            */
           /* =================================================== */
