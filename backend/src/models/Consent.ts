@@ -11,8 +11,21 @@ export interface IConsent extends Document {
   whichServiceName: string;
   fromWhen: string;
   untilWhen: string;
-  status: 'Active' | 'Access Revoked' | 'Expired';
+  grantedAt?: string;
+  expiresAt?: string;
   revokedAt?: string;
+  deniedAt?: string;
+  status:
+    | 'Active'
+    | 'Access Revoked'
+    | 'Expired'
+    | 'Granted'
+    | 'Denied'
+    | 'ACTIVE'
+    | 'REVOKED'
+    | 'EXPIRED'
+    | 'GRANTED'
+    | 'DENIED';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,13 +42,27 @@ const ConsentSchema = new Schema<IConsent>(
     whichServiceName: { type: String, required: true },
     fromWhen: { type: String, required: true },
     untilWhen: { type: String, required: true },
+    grantedAt: { type: String },
+    expiresAt: { type: String },
+    revokedAt: { type: String },
+    deniedAt: { type: String },
     status: {
       type: String,
-      enum: ['Active', 'Access Revoked', 'Expired'],
+      enum: [
+        'Active',
+        'Access Revoked',
+        'Expired',
+        'Granted',
+        'Denied',
+        'ACTIVE',
+        'REVOKED',
+        'EXPIRED',
+        'GRANTED',
+        'DENIED',
+      ],
       default: 'Active',
       index: true,
     },
-    revokedAt: { type: String },
   },
   { timestamps: true }
 );

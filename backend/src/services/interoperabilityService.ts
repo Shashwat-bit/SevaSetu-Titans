@@ -84,29 +84,105 @@ export class InteroperabilityService {
    * Validates active citizen consent for a department and service.
    */
   async validateConsent(citizenId: string, departmentId: string, applicationId?: string): Promise<IConsent> {
+    let consent: IConsent | null = null;
+
     if (applicationId) {
       // Look for application-specific consent first
-      const appConsent = await Consent.findOne({ citizenId, departmentId, whichApplicationId: applicationId });
-      if (appConsent) {
-        if (appConsent.status !== 'Active') {
-          throw new AppError(
-            `Consent required. Consent for application ${applicationId} is ${appConsent.status}.`,
-            403
-          );
-        }
-        return appConsent;
+      consent = await Consent.findOne({ citizenId, departmentId, whichApplicationId: applicationId });
+
+      if (!consent) {
+        // Only allow general/blanket consent if whichApplicationId is unset or GENERAL
+        // An existing consent belonging to ANOTHER application must NEVER authorize this application!
+        consent = await Consent.findOne({
+          citizenId,
+          departmentId,
+          $or: [
+            { whichApplicationId: '' },
+            { whichApplicationId: 'GENERAL' },
+            { whichApplicationId: { $exists: false } },
+          ],
+        }).sort({ createdAt: -1 });
       }
+    } else {
+      consent = await Consent.findOne({ citizenId, departmentId }).sort({ createdAt: -1 });
     }
 
-    const generalConsent = await Consent.findOne({ citizenId, departmentId, status: 'Active' }).sort({ createdAt: -1 });
-    if (!generalConsent) {
+    if (!consent) {
       throw new AppError(
-        `Consent required. No active citizen consent found authorizing ${departmentId} to access credentials.`,
+        `Consent required. No citizen consent found authorizing ${departmentId} for ${applicationId || 'credential access'}.`,
         403
       );
     }
 
-    return generalConsent;
+    // Check citizen ownership
+    if (consent.citizenId !== citizenId) {
+      throw new AppError('Forbidden. Consent belongs to another citizen.', 403);
+    }
+
+    // Check application isolation: Consent for another application must not authorize this application
+    if (
+      applicationId &&
+      consent.whichApplicationId &&
+      consent.whichApplicationId !== applicationId &&
+      consent.whichApplicationId !== 'GENERAL'
+    ) {
+      throw new AppError(
+        `Forbidden. Consent ${consent.consentId} is authorized for application ${consent.whichApplicationId}, not ${applicationId}.`,
+        403
+      );
+    }
+
+    const statusUpper = (consent.status || '').toUpperCase();
+
+    // Check revoked status
+    if (statusUpper === 'ACCESS REVOKED' || statusUpper === 'REVOKED') {
+      throw new AppError(
+        `Consent required. Consent for application ${applicationId || consent.whichApplicationId} has been revoked.`,
+        403
+      );
+    }
+
+    // Check denied status
+    if (statusUpper === 'DENIED') {
+      throw new AppError(
+        `Consent required. Consent for application ${applicationId || consent.whichApplicationId} was denied.`,
+        403
+      );
+    }
+
+    // Check expiration date
+    const expirationStr = consent.expiresAt || consent.untilWhen;
+    if (expirationStr) {
+      const expDate = new Date(expirationStr);
+      if (!isNaN(expDate.getTime()) && expDate.getTime() < Date.now()) {
+        if (consent.status !== 'Expired' && consent.status !== 'EXPIRED') {
+          consent.status = 'Expired';
+          await consent.save();
+        }
+        throw new AppError(
+          `Consent expired. Consent for application ${applicationId || consent.whichApplicationId} expired on ${expirationStr}.`,
+          403
+        );
+      }
+    }
+
+    // Check expired status flag
+    if (statusUpper === 'EXPIRED') {
+      throw new AppError(
+        `Consent expired. Consent for application ${applicationId || consent.whichApplicationId} has expired.`,
+        403
+      );
+    }
+
+    // Status must be ACTIVE or GRANTED
+    if (statusUpper !== 'ACTIVE' && statusUpper !== 'GRANTED') {
+      throw new AppError(
+        `Consent required. Consent status is ${consent.status}.`,
+        403
+      );
+    }
+
+    return consent;
   }
 
   /**
@@ -155,7 +231,9 @@ export class InteroperabilityService {
     let activeConsent: IConsent | null = null;
     try {
       activeConsent = await this.validateConsent(app.citizenId, app.departmentId, app.applicationId);
-    } catch {
+    } catch (err: any) {
+      const errMsg = err.message || 'Missing or revoked citizen consent';
+
       // Record denied exchange attempt in audit log
       await DataExchange.create({
         exchangeId: `xchg-denied-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -171,7 +249,7 @@ export class InteroperabilityService {
         status: 'DENIED',
         requestedBy: user.id || user.userId,
         requestedByName: user.name,
-        metadata: { reason: 'Missing or revoked citizen consent' },
+        metadata: { reason: errMsg },
       });
 
       await Activity.create({
@@ -181,15 +259,15 @@ export class InteroperabilityService {
         serviceName: app.serviceName,
         departmentName: app.departmentName,
         action: 'Data Access Denied - Consent Missing or Revoked',
-        details: `Access request for document "${documentId}" rejected because citizen consent is not active.`,
+        details: `Access request for document "${documentId}" rejected: ${errMsg}`,
         type: 'data_access_denied',
         statusBadge: 'Denied',
         timestamp: nowFormatted,
-        metadata: { requestedBy: user.id || user.userId, officerRole: user.role },
+        metadata: { requestedBy: user.id || user.userId, officerRole: user.role, reason: errMsg },
       });
 
       throw new AppError(
-        `Data access blocked: Active citizen consent is required to exchange credentials with ${app.departmentName}.`,
+        errMsg.startsWith('Data access') ? errMsg : `Data access blocked: ${errMsg}`,
         403
       );
     }

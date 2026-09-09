@@ -14,6 +14,7 @@ export interface IActivity extends Document {
     | 'verification'
     | 'consent_grant'
     | 'consent_revoke'
+    | 'consent_denied'
     | 'status_change'
     | 'officer_remark'
     | 'document_requested'
@@ -21,7 +22,9 @@ export interface IActivity extends Document {
     | 'document_exchanged'
     | 'data_access_denied'
     | 'adapter_request'
-    | 'adapter_response';
+    | 'adapter_response'
+    | 'login'
+    | 'security_alert';
   statusBadge: string;
   timestamp: string;
   metadata?: Record<string, any>;
@@ -46,6 +49,7 @@ const ActivitySchema = new Schema<IActivity>(
         'verification',
         'consent_grant',
         'consent_revoke',
+        'consent_denied',
         'status_change',
         'officer_remark',
         'document_requested',
@@ -54,6 +58,8 @@ const ActivitySchema = new Schema<IActivity>(
         'data_access_denied',
         'adapter_request',
         'adapter_response',
+        'login',
+        'security_alert',
       ],
       required: true,
       index: true,

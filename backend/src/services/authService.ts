@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { User, IUser, UserRole } from '../models/User';
+import { Activity } from '../models/Activity';
 import { ENV } from '../config/env';
 import { AppError } from '../middleware/errorHandler';
 import { AuthTokenPayload } from '../middleware/authMiddleware';
@@ -60,21 +61,73 @@ export class AuthService {
   }
 
   async login(email: string, password: string): Promise<{ token: string; user: SanitizedUser }> {
+    const nowFormatted = new Date().toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
     if (!email || !password) {
       throw new AppError('Email and password are required', 400);
     }
 
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
+      await Activity.create({
+        activityId: `act-sec-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
+        citizenId: 'anonymous',
+        serviceName: 'Identity & Access Management',
+        departmentName: 'System Auth',
+        action: 'Failed Login Attempt',
+        details: `Failed authentication attempt for unknown email ${email.toLowerCase()}.`,
+        type: 'security_alert',
+        statusBadge: 'Failed',
+        timestamp: nowFormatted,
+        metadata: { email: email.toLowerCase() },
+      });
       throw new AppError('Invalid email or password', 401);
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
+      await Activity.create({
+        activityId: `act-sec-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
+        citizenId: user.citizenId,
+        serviceName: 'Identity & Access Management',
+        departmentName: user.departmentId || 'System Auth',
+        action: 'Failed Login Attempt',
+        details: `Failed authentication attempt for user ${user.name} (${user.email}).`,
+        type: 'security_alert',
+        statusBadge: 'Failed',
+        timestamp: nowFormatted,
+        metadata: { userId: user._id.toString(), email: user.email },
+      });
       throw new AppError('Invalid email or password', 401);
     }
 
     const token = this.generateToken(user);
+
+    // Audit successful login
+    await Activity.create({
+      activityId: `act-login-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
+      citizenId: user.citizenId,
+      serviceName: 'Identity & Access Management',
+      departmentName: user.departmentId || 'System Auth',
+      action: `User Login - ${user.name}`,
+      details: `${user.name} (${user.role.toUpperCase()}) authenticated successfully via JWT session.`,
+      type: 'login',
+      statusBadge: 'Authenticated',
+      timestamp: nowFormatted,
+      metadata: {
+        userId: user._id.toString(),
+        email: user.email,
+        role: user.role,
+        departmentId: user.departmentId,
+      },
+    });
+
     return {
       token,
       user: this.sanitizeUser(user),
@@ -82,6 +135,14 @@ export class AuthService {
   }
 
   async demoSwitch(personaKey: string): Promise<{ token: string; user: SanitizedUser; message: string }> {
+    const nowFormatted = new Date().toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
     // Map of demo personas to their seeded citizenId or email
     const personaMap: Record<string, string> = {
       citizen: 'cit-001',
@@ -99,6 +160,25 @@ export class AuthService {
     }
 
     const token = this.generateToken(user);
+
+    await Activity.create({
+      activityId: `act-demo-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
+      citizenId: user.citizenId,
+      serviceName: 'Identity & Access Management',
+      departmentName: user.departmentId || 'System Auth',
+      action: `Demo Persona Switch - ${user.name}`,
+      details: `Switched active demo session to ${user.name} (${user.role.toUpperCase()}).`,
+      type: 'login',
+      statusBadge: 'Demo Active',
+      timestamp: nowFormatted,
+      metadata: {
+        userId: user._id.toString(),
+        personaKey,
+        role: user.role,
+        departmentId: user.departmentId,
+      },
+    });
+
     return {
       token,
       user: this.sanitizeUser(user),

@@ -15,13 +15,37 @@ export async function getConsents(req: AuthRequest, res: Response, next: NextFun
   }
 }
 
+export async function getConsentById(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new AppError('Unauthorized', 401);
+    }
+    const consent = await consentService.getConsentById(req.params.id, req.user.citizenId);
+    res.status(200).json({ success: true, data: consent });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function createConsent(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
     if (!req.user) {
       throw new AppError('Unauthorized', 401);
     }
 
-    const { departmentId, whoHasAccess, whatData, whyPurpose, whichApplicationId, whichServiceName, fromWhen, untilWhen } = req.body;
+    const {
+      departmentId,
+      whoHasAccess,
+      whatData,
+      whyPurpose,
+      whichApplicationId,
+      whichServiceName,
+      fromWhen,
+      untilWhen,
+      grantedAt,
+      expiresAt,
+      status,
+    } = req.body;
 
     if (!departmentId || !whoHasAccess || !whichApplicationId || !whichServiceName) {
       throw new AppError('Missing required consent fields', 400);
@@ -36,11 +60,14 @@ export async function createConsent(req: AuthRequest, res: Response, next: NextF
       whyPurpose: whyPurpose || 'Eligibility verification',
       whichApplicationId,
       whichServiceName,
-      fromWhen: fromWhen || new Date().toISOString(),
-      untilWhen: untilWhen || new Date(Date.now() + 180 * 86400000).toISOString(),
+      fromWhen: fromWhen || grantedAt,
+      untilWhen: untilWhen || expiresAt,
+      grantedAt,
+      expiresAt,
+      status,
     });
 
-    res.status(201).json({ success: true, data: consent, message: 'Consent permission granted' });
+    res.status(201).json({ success: true, data: consent, message: 'Consent permission processed' });
   } catch (error) {
     next(error);
   }
@@ -56,6 +83,23 @@ export async function revokeConsent(req: AuthRequest, res: Response, next: NextF
       success: true,
       data: consent,
       message: 'Consent access revoked successfully. Department access terminated.',
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function denyConsent(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new AppError('Unauthorized', 401);
+    }
+    const { reason } = req.body || {};
+    const consent = await consentService.denyConsent(req.params.id, req.user.citizenId, reason);
+    res.status(200).json({
+      success: true,
+      data: consent,
+      message: 'Consent denied successfully. Access rejected.',
     });
   } catch (error) {
     next(error);

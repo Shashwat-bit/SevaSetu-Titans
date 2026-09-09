@@ -18,10 +18,15 @@ export async function getDocuments(req: AuthRequest, res: Response, next: NextFu
     }
 
     if (req.user.role === 'officer') {
-      // Officer sees documents attached to applications submitted to their department
+      // Data Minimization: Officer sees ONLY documents explicitly attached to applications in their department
       const deptApps = await Application.find({ departmentId: req.user.departmentId });
-      const citizenIds = Array.from(new Set(deptApps.map((a) => a.citizenId)));
-      const documents = await CitizenDocument.find({ citizenId: { $in: citizenIds } });
+      const attachedDocIds = new Set<string>();
+      deptApps.forEach((app) => {
+        (app.documentsAttached || []).forEach((d) => {
+          if (d.docId) attachedDocIds.add(d.docId);
+        });
+      });
+      const documents = await CitizenDocument.find({ documentId: { $in: Array.from(attachedDocIds) } });
       res.status(200).json({ success: true, count: documents.length, data: documents });
       return;
     }
@@ -56,7 +61,7 @@ export async function verifyDocument(req: AuthRequest, res: Response, next: Next
     if (!req.user) {
       throw new AppError('Unauthorized', 401);
     }
-    const verification = await documentService.verifyDocument(req.params.id);
+    const verification = await documentService.verifyDocument(req.params.id, req.user);
     res.status(200).json({ success: true, data: verification });
   } catch (error) {
     next(error);

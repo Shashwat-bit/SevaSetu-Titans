@@ -42,11 +42,44 @@ export class ApplicationService {
       throw new AppError(`Application ${applicationId} not found`, 404);
     }
 
+    const nowFormatted = new Date().toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
     if (user.role === 'citizen' && app.citizenId !== user.citizenId) {
+      await Activity.create({
+        activityId: `act-sec-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
+        citizenId: user.citizenId,
+        applicationId: app.applicationId,
+        serviceName: app.serviceName,
+        departmentName: app.departmentName,
+        action: 'Unauthorized Application Access Attempt',
+        details: `Citizen ${user.citizenId} attempted to access application ${applicationId} belonging to citizen ${app.citizenId}.`,
+        type: 'data_access_denied',
+        statusBadge: 'Blocked',
+        timestamp: nowFormatted,
+      });
       throw new AppError('Forbidden. You may only view your own applications.', 403);
     }
 
     if (user.role === 'officer' && app.departmentId !== user.departmentId) {
+      await Activity.create({
+        activityId: `act-sec-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
+        citizenId: app.citizenId,
+        applicationId: app.applicationId,
+        serviceName: app.serviceName,
+        departmentName: app.departmentName,
+        action: 'Cross-Department Access Blocked',
+        details: `Officer ${user.name} (${user.departmentId}) attempted unauthorized access to ${app.departmentName} application ${applicationId}.`,
+        type: 'data_access_denied',
+        statusBadge: 'Blocked',
+        timestamp: nowFormatted,
+        metadata: { officerId: user.id || user.userId, officerDepartment: user.departmentId },
+      });
       throw new AppError(`Forbidden. You may only view applications in your department (${user.departmentId}).`, 403);
     }
 
@@ -160,6 +193,8 @@ export class ApplicationService {
       whichServiceName: service.title,
       fromWhen: formattedNow,
       untilWhen: formattedUntil,
+      grantedAt: formattedNow,
+      expiresAt: formattedUntil,
       status: 'Active',
     });
 
@@ -370,6 +405,34 @@ export class ApplicationService {
 
   async getApplicationDocuments(applicationId: string, user: AuthTokenPayload): Promise<IAttachedDocument[]> {
     const app = await this.getApplicationByIdWithAccess(applicationId, user);
+
+    if (user.role === 'officer') {
+      const nowFormatted = new Date().toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      await Activity.create({
+        activityId: `act-docacc-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
+        citizenId: app.citizenId,
+        applicationId: app.applicationId,
+        serviceName: app.serviceName,
+        departmentName: app.departmentName,
+        action: `Application Documents Reviewed`,
+        details: `Officer ${user.name} (${user.departmentId || app.departmentName}) accessed attached documents for application ${app.applicationId}.`,
+        type: 'document_access',
+        statusBadge: 'Accessed',
+        timestamp: nowFormatted,
+        metadata: {
+          officerId: user.id || user.userId,
+          officerName: user.name,
+          departmentId: user.departmentId,
+        },
+      });
+    }
+
     return app.documentsAttached || [];
   }
 }

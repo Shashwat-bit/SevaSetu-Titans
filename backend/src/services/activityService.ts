@@ -9,7 +9,23 @@ export interface CreateActivityDto {
   departmentName: string;
   action: string;
   details: string;
-  type: 'submission' | 'document_access' | 'verification' | 'consent_grant' | 'consent_revoke' | 'status_change';
+  type:
+    | 'submission'
+    | 'document_access'
+    | 'verification'
+    | 'consent_grant'
+    | 'consent_revoke'
+    | 'consent_denied'
+    | 'status_change'
+    | 'officer_remark'
+    | 'document_requested'
+    | 'document_fetched'
+    | 'document_exchanged'
+    | 'data_access_denied'
+    | 'adapter_request'
+    | 'adapter_response'
+    | 'login'
+    | 'security_alert';
   statusBadge: string;
   metadata?: Record<string, any>;
 }
@@ -26,6 +42,7 @@ export class ActivityService {
       filter.$or = [
         { departmentName: { $regex: new RegExp(deptName || user.departmentId, 'i') } },
         { details: { $regex: new RegExp(user.departmentId, 'i') } },
+        { citizenId: user.citizenId },
       ];
     }
 

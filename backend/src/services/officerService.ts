@@ -143,6 +143,20 @@ export class OfficerService {
     }
 
     if (officer.role === 'officer' && app.departmentId !== officer.departmentId) {
+      const nowFormatted = this.formatDateNow();
+      await Activity.create({
+        activityId: `act-sec-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
+        citizenId: app.citizenId,
+        applicationId: app.applicationId,
+        serviceName: app.serviceName,
+        departmentName: app.departmentName,
+        action: 'Cross-Department Access Blocked',
+        details: `Officer ${officer.name} (${officer.departmentId}) attempted unauthorized desk access to application ${applicationId}.`,
+        type: 'data_access_denied',
+        statusBadge: 'Blocked',
+        timestamp: nowFormatted,
+        metadata: { officerId: this.getOfficerUserId(officer), officerDepartment: officer.departmentId },
+      });
       throw new AppError(
         `Forbidden. You may only access applications in your department (${officer.departmentId}).`,
         403
