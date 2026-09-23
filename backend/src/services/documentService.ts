@@ -54,7 +54,7 @@ export class DocumentService {
         throw new AppError('Forbidden. You may only verify your own documents.', 403);
       }
       if (user.role === 'officer') {
-        const { Application } = await import('../models/Application');
+        const { Application } = await import('../models/Application.js');
         const hasAccess = await Application.exists({
           departmentId: user.departmentId,
           'documentsAttached.docId': documentId,

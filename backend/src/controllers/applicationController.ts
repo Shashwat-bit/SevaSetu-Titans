@@ -121,7 +121,7 @@ export async function requestApplicationDocumentExchange(req: AuthRequest, res: 
       throw new AppError('documentId is required', 400);
     }
 
-    const { interoperabilityService } = await import('../services/interoperabilityService');
+    const { interoperabilityService } = await import('../services/interoperabilityService.js');
     const result = await interoperabilityService.requestDocumentExchange({
       applicationId: req.params.id,
       documentId,
@@ -147,7 +147,7 @@ export async function fetchApplicationDocument(req: AuthRequest, res: Response, 
     const { id, documentId } = req.params;
     const { purpose } = req.body || {};
 
-    const { interoperabilityService } = await import('../services/interoperabilityService');
+    const { interoperabilityService } = await import('../services/interoperabilityService.js');
     const result = await interoperabilityService.requestDocumentExchange({
       applicationId: id,
       documentId,
@@ -170,7 +170,7 @@ export async function getApplicationExchanges(req: AuthRequest, res: Response, n
     if (!req.user) {
       throw new AppError('Unauthorized', 401);
     }
-    const { interoperabilityService } = await import('../services/interoperabilityService');
+    const { interoperabilityService } = await import('../services/interoperabilityService.js');
     const exchanges = await interoperabilityService.getApplicationExchanges(req.params.id, req.user);
     res.status(200).json({ success: true, count: exchanges.length, data: exchanges });
   } catch (error) {
